@@ -21,3 +21,9 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run test:ui
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: diagnostico-dos-testes
+          path: .test-output/reports/
+          retention-days: 7
