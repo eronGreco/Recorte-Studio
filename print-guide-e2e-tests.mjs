@@ -16,8 +16,9 @@ try{
  await p.locator('#print-marks').check();await p.waitForSelector('#print-guide-preview [data-print-alignment-guides="4"]');
  await p.locator('#print-turn-enabled').check();await p.waitForSelector('#print-guide-preview [data-print-turn-arrow]');assert.equal(await p.locator('#export-duplex').isEnabled(),true);
  const oldX=Number(await p.locator('#print-turn-x').inputValue());
- const start=await p.locator('#print-guide-preview [data-print-turn-arrow] path').last().evaluate(path=>{const p=path.getPointAtLength(0),m=path.getScreenCTM();return{x:m.a*p.x+m.c*p.y+m.e,y:m.b*p.x+m.d*p.y+m.f};});
- await p.mouse.move(start.x,start.y);await p.mouse.down();await p.mouse.move(start.x+12,start.y,{steps:6});await p.mouse.up();assert.ok(Number(await p.locator('#print-turn-x').inputValue())>oldX+1,'arrastar altera posição em mm');
+ // Use the interior of the drag target; a path endpoint can miss at fractional DPI.
+ const target=p.locator('#print-guide-preview [data-print-turn-arrow] [data-preview-only]');await target.hover();const box=await target.boundingBox(),start={x:box.x+box.width/2,y:box.y+box.height/2},direction=oldX>raw.page.w/2?-1:1;
+ await p.mouse.move(start.x,start.y);await p.mouse.down();await p.mouse.move(start.x+direction*12,start.y,{steps:6});await p.mouse.up();const draggedX=Number(await p.locator('#print-turn-x').inputValue());assert.ok((draggedX-oldX)*direction>1,`arrastar altera posição em mm: ${oldX} → ${draggedX}`);
  await p.locator('#print-turn-size').fill('8');await p.locator('#print-turn-size').press('Tab');await p.locator('#print-turn-both').check();
  await p.locator('#print-turn-size').fill('25');await p.locator('#print-turn-size').press('Tab');assert.equal(await p.locator('#print-turn-size').inputValue(),'8');assert.equal(await p.locator('#export-duplex').isEnabled(),true,'valor inválido não prende as configurações');
  await p.locator('.print-reload-settings summary').click();await p.locator('#print-feed-face').selectOption('down');await p.locator('#print-feed-edge').selectOption('right');assert.match(await p.locator('#print-turn-instructions').textContent(),/baixo.*direita/);
