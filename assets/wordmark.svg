@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="220" viewBox="0 0 900 220">
+  <title>Recorte Studio</title>
+  <rect x="10" y="10" width="200" height="200" rx="44" fill="#173f35"/>
+  <path d="M64 48h62l33 33v89H64z" fill="#faf7ed"/>
+  <path d="M126 48v33h33z" fill="#a4d3b1"/>
+  <path d="M84 147V94h27c17 0 26 7 26 21 0 10-5 16-14 19l17 13h-20l-21-18v18zm15-41v12h11c8 0 12-2 12-6s-4-6-12-6z" fill="#173f35" fill-rule="evenodd"/>
+  <path d="M54 60V47h13M147 159h14v-13" fill="none" stroke="#ee8f79" stroke-width="5" stroke-linecap="round"/>
+  <text x="252" y="122" font-family="Segoe UI,Arial,sans-serif" font-size="94" font-weight="650" letter-spacing="-4" fill="#173f35">recorte</text>
+  <text x="258" y="169" font-family="Segoe UI,Arial,sans-serif" font-size="28" letter-spacing="14" fill="#557367">STUDIO</text>
+</svg>

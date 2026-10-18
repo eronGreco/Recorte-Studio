@@ -1,0 +1,71 @@
+{
+  "name": "recorte-studio",
+  "version": "0.8.1",
+  "private": true,
+  "description": "Editor local de arte, corte, sangria e impressão frente e verso",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node scripts/run-tests.mjs unit",
+    "test:contour-quality": "node contour-quality-tests.mjs",
+    "test:transforms": "node transform-tests.mjs",
+    "test:hardware-offline": "node hardware/hardware-tests.mjs && node hardware/project-cut-paths-tests.mjs",
+    "prepare:cut": "node hardware/prepare-cut.mjs",
+    "test:cut-appearance": "node cut-appearance-tests.mjs",
+    "test:machine": "node hardware/machine-tests.mjs && node machine-e2e-tests.mjs",
+    "test:registration": "node hardware/registration-tests.mjs && node registration-e2e-tests.mjs",
+    "test:vector-cuts": "node vector-cut-tests.mjs",
+    "test:scanner": "node scanner-tests.mjs",
+    "test:snapping": "node snapping-tests.mjs",
+    "test:back-navigation": "node back-navigation-tests.mjs",
+    "test:overcut": "node overcut-tests.mjs",
+    "test:cut-settings": "node cut-settings-tests.mjs",
+    "test:blade": "node blade-verification-tests.mjs && node blade-check-tests.mjs",
+    "test:background-job": "node worker-control-pipe-tests.mjs && node background-job-tests.mjs",
+    "test:materials": "node user-material-tests.mjs",
+    "test:print-guides": "node print-guides-tests.mjs && node print-guide-e2e-tests.mjs",
+    "test:calibration": "node calibration-tests.mjs && node calibration-e2e-tests.mjs",
+    "test:duplex-pdf": "node print-guide-e2e-tests.mjs",
+    "test:ui": "node scripts/run-tests.mjs ui",
+    "test:all": "node scripts/run-tests.mjs all",
+    "brand": "node scripts/build-brand.mjs",
+    "fixtures": "node scripts/create-fixtures.mjs"
+  },
+  "devDependencies": {
+    "electron": "^44.9.0",
+    "playwright": "^1.64.1"
+  },
+  "dependencies": {
+    "clipper-lib": "^6.4.2",
+    "dompurify": "^3.4.17",
+    "opentype.js": "^2.0.0",
+    "paper": "^0.12.18",
+    "pdf-lib": "^1.17.1",
+    "sharp": "^0.35.5"
+  },
+  "license": "MIT",
+  "author": "Eron Greco",
+  "homepage": "https://github.com/eronGreco/Recorte-Studio#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eronGreco/Recorte-Studio.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eronGreco/Recorte-Studio/issues"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "keywords": [
+    "silhouette-studio-alternative",
+    "silhouette-cameo",
+    "cameo-4",
+    "print-and-cut",
+    "image-tracing",
+    "bleed",
+    "duplex",
+    "nesting",
+    "usbprint",
+    "electron"
+  ]
+}

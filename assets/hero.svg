@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="520" viewBox="0 0 1280 520">
+  <title>Recorte Studio — seu desenho, seu recorte</title>
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#a4d3b1" stroke-opacity=".08"/></pattern>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#12372e"/><stop offset="1" stop-color="#245548"/></linearGradient>
+  </defs>
+  <rect width="1280" height="520" rx="24" fill="url(#bg)"/>
+  <rect width="1280" height="520" rx="24" fill="url(#grid)"/>
+  <path d="M930 59c197 0 261 78 261 201s-81 219-246 219" fill="none" stroke="#ee8f79" stroke-opacity=".5" stroke-width="2" stroke-dasharray="9 9"/>
+  <rect x="65" y="59" width="292" height="30" rx="15" fill="#a4d3b1" fill-opacity=".13"/>
+  <text x="84" y="80" fill="#bee0c7" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="600" letter-spacing="2">LIVRE. LOCAL. DO SEU JEITO.</text>
+  <text x="63" y="195" fill="#faf7ed" font-family="Segoe UI,Arial,sans-serif" font-size="92" font-weight="700" letter-spacing="-4">recorte</text>
+  <text x="68" y="243" fill="#a4d3b1" font-family="Segoe UI,Arial,sans-serif" font-size="27" letter-spacing="15">STUDIO</text>
+  <text x="67" y="311" fill="#faf7ed" font-family="Segoe UI,Arial,sans-serif" font-size="30" font-weight="500">Seu desenho. Seu recorte.</text>
+  <text x="67" y="351" fill="#bdd0c8" font-family="Segoe UI,Arial,sans-serif" font-size="21">Uma alternativa prática ao Silhouette Studio.</text>
+  <g fill="none" stroke="#93b1a3" stroke-opacity=".4"><rect x="67" y="408" width="139" height="36" rx="18"/><rect x="217" y="408" width="119" height="36" rx="18"/><rect x="347" y="408" width="192" height="36" rx="18"/><rect x="550" y="408" width="119" height="36" rx="18"/></g>
+  <g fill="#d7e8dc" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="600" text-anchor="middle"><text x="136" y="431">CONTORNO</text><text x="276" y="431">SANGRIA</text><text x="443" y="431">FRENTE E VERSO</text><text x="609" y="431">CAMEO 4</text></g>
+  <g transform="translate(818 85) rotate(8 150 170)">
+    <rect x="-15" y="-15" width="340" height="370" rx="80" fill="#102e27" fill-opacity=".45"/>
+    <path d="M40 15h165l85 85v235H40z" fill="#faf7ed"/>
+    <path d="M205 15v85h85z" fill="#a4d3b1"/>
+    <path d="M94 274V138h68c43 0 66 19 66 53 0 25-13 42-36 49l43 34h-51l-53-45v45zm37-104v29h28c20 0 30-3 30-15s-10-14-30-14z" fill="#173f35" fill-rule="evenodd"/>
+    <path d="M17 50V13h37M262 312h40v-36" fill="none" stroke="#ee8f79" stroke-width="12" stroke-linecap="round"/>
+  </g>
+</svg>

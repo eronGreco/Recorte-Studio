@@ -1,0 +1,30 @@
+# Installed dependencies and packaging output
+node_modules/
+dist/
+release/
+build/
+
+# Local projects, autosave, print previews and device logs
+data/
+projetos/
+*.recorte
+!test/fixtures/demo.recorte
+*.pdf
+*.jsonl
+*.log
+
+# Reproducible test output
+.test-output/
+test-results/
+playwright-report/
+
+# Python and local configuration
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+runtime/

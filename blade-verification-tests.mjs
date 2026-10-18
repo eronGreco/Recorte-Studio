@@ -1,0 +1,25 @@
+import * as recortePaths from './scripts/test-paths.mjs';
+import assert from 'node:assert/strict';
+import {createBladeVerification} from './hardware/blade-verification.mjs';
+import {createMachineController} from './hardware/machine-controller.mjs';
+const dataDir=`${recortePaths.workRoot}/blade-observation-`+Date.now(),service=createBladeVerification({dataDir});
+assert.equal((await service.get()).blocked,false);
+for(const input of [{expectedDepth:4,observedDepth:''},{expectedDepth:4,observedDepth:11},{expectedDepth:4,observedDepth:4.5},{expectedDepth:0,observedDepth:0},{expectedDepth:4,observedDepth:10,extra:true}])await assert.rejects(service.record(input),/observado/);
+await service.record({expectedDepth:4,observedDepth:10});
+await assert.rejects(service.assertCutAllowed(),/solicitada em 4.*observado em 10/);
+const restarted=createBladeVerification({dataDir});assert.equal((await restarted.get()).blocked,true);
+await restarted.record({expectedDepth:4,observedDepth:null});assert.equal((await restarted.get()).blocked,true);
+assert.equal((await restarted.get()).last.result,'unreadable');
+const project={format:'recorte-studio',version:3,page:{w:297,h:210},production:{machine:{enabled:true,settings:{depth:4,force:21,speed:2,passes:2}}},items:[['Group',{data:{uid:'a',kind:'png',cut:{offset:0,join:'sharp',smoothing:.3},traceInfo:{offset:0,join:'sharp',smoothing:.3}},children:[['Group',{data:{kind:'cut'},children:[['Path',{closed:true,segments:[[40,40],[50,40],[50,50],[40,50]]}]]}]]}]]};
+const calls=[],controller=createMachineController({dataDir,transport:async(action)=>{calls.push(action);return{state:'ready'};}});
+const plan=await controller.prepare({project:JSON.stringify(project),pages:['<svg xmlns="http://www.w3.org/2000/svg" width="297mm" height="210mm"></svg>']});
+await assert.rejects(controller.cut({token:plan.token}),/observado em 10/);assert.deepEqual(calls,[]);
+await controller.status();await controller.adjustBlade({project:JSON.stringify(project)});
+assert.equal((await controller.bladeVerification()).blocked,true);
+await assert.rejects(controller.cut({token:plan.token}),/observado em 10/);assert.deepEqual(calls,['status','adjust-blade']);
+await controller.recordBladeObservation({expectedDepth:4,observedDepth:4});
+assert.equal((await controller.bladeVerification()).blocked,false);
+// A blocked cut never consumes its prepared job; the user can continue once corrected.
+await controller.cut({token:plan.token});assert.deepEqual(calls,['status','adjust-blade','cut']);
+await assert.rejects(controller.cut({token:plan.token}),/novamente/);
+console.log('OK: registro validado e persistente; divergência bloqueia produção antes de qualquer USB; READY e reinício não liberam; observação correta libera o mesmo trabalho.');

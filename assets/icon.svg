@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <title>Recorte Studio</title>
+  <rect width="512" height="512" rx="112" fill="#173f35"/>
+  <path d="M139 99h158l84 84v230H139z" fill="#faf7ed"/>
+  <path d="M297 99v84h84z" fill="#a4d3b1"/>
+  <path d="M192 350V214h68c43 0 66 19 66 53 0 25-13 42-36 49l43 34h-51l-53-45v45zm37-104v29h28c20 0 30-3 30-15s-10-14-30-14z" fill="#173f35" fill-rule="evenodd"/>
+  <path d="M113 129v-34h34M351 386h37v-35" fill="none" stroke="#ee8f79" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
