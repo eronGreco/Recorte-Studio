@@ -1,0 +1,101 @@
+/* Task navigation stays visible; only the settings below it scroll. */
+.workspace{grid-template-columns:184px minmax(0,1fr) 320px}
+.tools{padding:12px 10px;background:#fbfcfa;gap:0;scrollbar-width:thin}
+#tool-list{display:block}
+.tool-group{padding:8px 0 13px;border-bottom:1px solid #e5ebe6;margin-bottom:4px}
+.tool-group h2{font-size:9px;letter-spacing:1.35px;font-weight:650;color:#89988e;margin:5px 10px 10px}
+.tools .tool{height:36px;min-height:36px;border-radius:7px;padding:0 10px;gap:10px;font-size:11px;color:#52655d;width:100%;margin:2px 0}
+.tools .tool .icon{width:18px;height:18px;flex-shrink:0;color:#7b8d82;stroke-width:1.6}
+.tools .tool:hover{background:#edf2ee;color:#245e49}
+.tools .tool.active{background:#e1eee7;color:#185f49;font-weight:650;box-shadow:inset 3px 0 #36856a}
+.tools .tool.active .icon{color:#247558}
+.tools .tool .key{margin-left:auto;color:#9ba69f;font-size:9px}
+.tools .tool-group-bottom{margin-top:auto;border:0;margin-bottom:0}
+.inspector{background:#f6f8f5;border-left:1px solid #dfe7e0}
+.inspector-header{height:63px;min-height:63px;padding:12px 18px;background:#fff;border-bottom:0;gap:10px}
+.inspector-header>div{min-width:0;display:flex;flex-direction:column;gap:5px}
+.inspector-kicker{font-size:8px;letter-spacing:1.5px;color:#91a096;font-weight:650}
+#inspector-title{font-size:12px;font-weight:600;color:#354e42;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4;display:block}
+.inspector-header>.icon{width:17px;color:#82978a;flex-shrink:0}
+.inspector-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:0 12px 12px;background:white;border-bottom:1px solid #e2e9e2}
+.inspector-nav button{display:flex;flex-direction:column;justify-content:center;gap:5px;min-height:56px;border:1px solid transparent;border-radius:8px;background:#f5f7f3;color:#77877d;padding:7px 2px;font-size:10px;position:relative}
+.inspector-nav button .icon{width:20px;height:20px;stroke-width:1.6}
+.inspector-nav button:hover{background:#edf3ee;color:#2c6d52;border-color:#dce7dd}
+.inspector-nav button[aria-selected=true]{background:#e8f2eb;border-color:#c5dacc;color:#216346;font-weight:650}
+.inspector-nav button[aria-selected=true]::after{content:'';position:absolute;width:17px;height:2px;background:#368768;border-radius:2px;bottom:0}
+.inspector-nav button:disabled,.inspector-nav button:disabled:hover{opacity:.4;background:#f5f7f3;color:#829087;border-color:transparent;cursor:not-allowed}
+.sidebar-multi-selection{display:flex;gap:9px;align-items:flex-start;padding:12px;margin-bottom:12px;border:1px solid #dce8dc;background:#edf5ed;border-radius:8px;color:#54735b}
+.sidebar-multi-selection>.icon{width:17px;height:17px;flex-shrink:0;margin-top:1px}
+.sidebar-multi-selection strong{display:block;font-size:11px;font-weight:600;color:#3e6349;margin-bottom:6px}
+.sidebar-multi-selection p{font-size:10px;line-height:1.65;margin:0}
+.sidebar-multi-selection #sidebar-single-only{font-size:9px;color:#7c8e7e;margin-top:6px}
+.inspector-nav button:focus-visible,.sidebar-help:focus-visible{outline:2px solid #368768;outline-offset:2px}
+.inspector-scroll{padding:0 12px 16px;scrollbar-gutter:stable;scroll-behavior:auto}
+.sidebar-pane-heading{display:flex;align-items:center;gap:9px;padding:19px 3px 13px;min-height:54px}
+.sidebar-pane-heading h2{font-size:13px;letter-spacing:-.15px;font-weight:650;margin:0;color:#385447;flex:1}
+.sidebar-heading-icon{color:#668873;display:flex}
+.sidebar-heading-icon .icon{width:19px;height:19px;stroke-width:1.6}
+.inspector .inspector-pane>section{padding:16px 14px;border:1px solid #e0e8e0;background:white;border-radius:10px;margin:0 0 10px}
+.inspector .section-heading{font-size:9px;letter-spacing:1px;color:#7e9281;margin-bottom:13px}
+.sidebar-secondary-heading{display:none}
+.inspector .field{font-size:10px;color:#6f8175;gap:6px;margin-bottom:12px}
+.inspector .field input,.inspector .field select,.inspector .field textarea{font-size:11px;border-color:#dce5dc;background:#fcfdfb;color:#3b5747;min-height:35px;border-radius:6px}
+.inspector .field input:focus,.inspector .field select:focus{outline:2px solid #96b5a2;outline-offset:1px;border-color:transparent}
+.inspector .check{font-size:10px;color:#5a725e;line-height:1.5;align-items:flex-start;gap:7px}
+.inspector .check input{flex-shrink:0;margin-top:2px;accent-color:#327556}
+.inspector .sidebar-copies{margin:0;padding:10px 17px;border-bottom:1px solid #e0e8e0;background:#f1f6f0;font-size:10px}
+.sidebar-help-row{display:flex;gap:7px;align-items:flex-start}
+.sidebar-help-row>label{flex:1;min-width:0}
+.sidebar-help{flex-shrink:0;min-width:17px!important;width:17px!important;height:17px!important;min-height:17px!important;padding:0!important;font-size:10px!important;line-height:1!important;margin:0!important;align-self:center}
+.sidebar-pane-heading .sidebar-help{margin-left:auto!important}
+.sidebar-bleed{border:0;padding:0;margin:0}
+.sidebar-bleed>summary{display:none}
+.sidebar-bleed>.check{margin:0 0 19px}
+.sidebar-bleed .field-grid{margin-top:14px}
+#bleed-status:empty{display:none}
+#bleed-status{font-size:10px;line-height:1.6;padding:9px;background:#f0f6ed;border-radius:6px;color:#6d8667}
+.inspector .piece-tabs{margin-bottom:15px}
+.inspector .piece-tabs button{font-size:10px;min-height:34px}
+.inspector .offset-value{margin:17px 0 12px}
+.inspector .offset-value input{font-size:28px}
+.inspector .explanation{font-size:10px;line-height:1.6;margin:10px 0 14px;color:#7d8e7e}
+.inspector #cut-status{font-size:9px;line-height:1.6;padding:8px}
+.inspector #cut-line-appearance{border:1px solid #e0e8df;margin:17px 0 0;padding:12px;background:#f9fcf7;min-width:0}
+.inspector #cut-line-appearance summary{font-size:10px;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;line-height:1.5}
+.inspector #cut-line-appearance[open] summary{margin-bottom:12px}
+.inspector .cut-line-controls{display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;align-items:start;min-width:0}
+.inspector .cut-line-color{width:auto;min-width:0;margin:0;gap:6px;line-height:16px}
+.inspector .cut-line-color input[type=color]{height:35px;min-height:35px;padding:4px;margin:0}
+.inspector .cut-line-thickness{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;min-width:0}
+.inspector .cut-line-thickness label{line-height:16px;min-height:16px;margin:0;gap:8px}
+.inspector .cut-line-thickness input[type=range]{height:35px;margin:0;padding:0;min-width:0;max-width:100%}
+.inspector .cut-line-thickness .range-labels{margin:0}
+.inspector .field-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.inspector input[type=range]{min-width:0;max-width:100%;box-sizing:border-box}
+.inspector .contour-smoothing>label{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center}
+.inspector .button-row{flex-wrap:wrap}
+.inspector .button-row button{font-size:10px;min-height:31px}
+.inspector #arrange-panel details[open] summary{margin-bottom:16px}
+.inspector .layers-section{min-height:0}
+.inspector .layer-heading{padding:6px 3px;background:#f0f5ee;border-radius:6px}
+.inspector .layer{border-radius:5px;background:#fafcf8;margin-top:4px;margin-bottom:3px;padding:4px}
+.inspector .layer-group{margin-top:13px}
+.inspector .layer-group-body{padding:5px 0 0 8px;border-left:1px solid #e1e9dc;margin-left:6px}
+.inspector .layer .layer-name{font-size:10px}
+.inspector #add-layer{margin:0 0 10px;font-size:10px;min-height:32px}
+.inspector .layer-components{font-size:8px;gap:3px}
+.sidebar-empty{display:flex;align-items:center;flex-direction:column;text-align:center;padding:36px 10px;color:#84978a;gap:11px}
+.sidebar-empty>.icon{width:30px;height:30px;stroke-width:1.2;color:#a7b9a9;margin-bottom:4px}
+.sidebar-empty strong{font-size:12px;font-weight:550;color:#597160}
+.sidebar-empty p{font-size:10px;line-height:1.7;margin:0 0 5px;max-width:190px}
+.sidebar-empty button{font-size:10px;min-height:32px;background:white}
+.inspector .sidebar-page-actions button{justify-content:flex-start;font-size:10px}
+.inspector #page-panel .check-row{flex-wrap:wrap}
+.inspector #page-panel .compact{width:75px}
+.inspector #registration-panel .section-heading{display:flex;letter-spacing:.5px}
+.inspector #registration-panel .reg-subheading{font-size:10px;margin-top:22px}
+body.registration-editing .inspector #page-panel,body.registration-editing .sidebar-page-actions{display:none}
+#sidebar-help-popover{font-size:11px;line-height:1.65;max-width:260px;pointer-events:none}
+@media(max-width:1250px){.workspace{grid-template-columns:166px minmax(0,1fr) 294px}.tools{padding-left:7px;padding-right:7px}.tools .tool{font-size:10px;padding:0 8px;gap:8px}.inspector-scroll{padding-left:10px;padding-right:8px}}
+@media(max-height:800px){.tools .tool{height:29px;min-height:29px;margin:1px 0}.tools #cut-settings-open{min-height:29px}.tool-group{padding-top:3px;padding-bottom:4px;margin-bottom:0}.tool-group h2{margin-top:3px;margin-bottom:5px}.inspector-header{height:55px;min-height:55px}.inspector-nav button{min-height:49px;gap:4px}.inspector-nav{padding-bottom:9px}}
+@media(max-width:1250px){header .brand{width:146px;flex:0 0 146px}header .title-area{min-width:80px;flex:1}header .title-area input{width:100%;max-width:210px}header .header-actions{flex-shrink:0;gap:5px;margin-left:0}}

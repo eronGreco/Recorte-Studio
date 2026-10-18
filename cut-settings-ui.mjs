@@ -1,3 +1,4 @@
+import {installAnchoredHelp} from './anchored-help.mjs';
 import {materialPreset,matchesMaterial,searchMaterials,setUserMaterials} from './material-presets.mjs';
 export function installCutSettingsUI({settings,getConfig,edit,config,busy,api,notify}){
  const $=id=>document.getElementById(id);
@@ -37,30 +38,10 @@ export function installCutSettingsUI({settings,getConfig,edit,config,busy,api,no
  }
  $('machine-material-search').addEventListener('input',renderMaterials);
  const help=document.createElement('div');help.id='cut-help-popover';help.className='cut-help-popover';help.setAttribute('role','tooltip');help.popover='manual';settings.append(help);
- let active=null;
- function clear(){active?.setAttribute('aria-expanded','false');active=null;if(help.matches(':popover-open'))help.hidePopover();delete help.dataset.active;}
- function show(button){
-  if(active===button){clear();return;}clear();active=button;button.setAttribute('aria-expanded','true');
-  help.textContent=$(button.getAttribute('aria-describedby')).textContent;help.dataset.active=button.getAttribute('aria-describedby');help.showPopover();
-  const b=button.getBoundingClientRect(),tip=help.getBoundingClientRect(),gap=9,pad=10;
-  const left=Math.max(pad,Math.min(window.innerWidth-tip.width-pad,b.left+b.width/2-tip.width/2));
-  const above=b.top>=tip.height+gap+pad;
-  help.style.left=left+'px';help.style.top=(above?b.top-tip.height-gap:Math.min(window.innerHeight-tip.height-pad,b.bottom+gap))+'px';
-  help.dataset.side=above?'above':'below';help.style.setProperty('--tip-arrow',Math.max(12,Math.min(tip.width-12,b.left+b.width/2-left))+'px');
- }
  for(const button of settings.querySelectorAll('.cut-help')){
   const key=button.getAttribute('aria-describedby').replace('cut-tip-','');button.setAttribute('aria-label','Explicar '+names[key]);
-  button.setAttribute('aria-controls',help.id);button.setAttribute('aria-expanded','false');
-  button.addEventListener('blur',()=>{if(active===button)clear();});
-  button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();show(button);});
  }
- for(const input of settings.querySelectorAll('input,select')){
-  input.addEventListener('pointerenter',clear);input.addEventListener('pointermove',clear);input.addEventListener('focus',clear);input.addEventListener('pointerdown',clear);
- }
- document.addEventListener('pointerdown',e=>{if(active&&!e.target.closest('.cut-help'))clear();},true);
- document.addEventListener('keydown',e=>{if(e.key==='Escape'&&active){e.preventDefault();e.stopImmediatePropagation();clear();}},true);
- document.addEventListener('scroll',clear,true);window.addEventListener('resize',clear);
- for(const dialog of [$('machine-dialog'),$('cut-settings-dialog')])dialog.addEventListener('close',clear);
+ const {clear}=installAnchoredHelp({root:settings,help});
  function apply(id,reset=false){if(busy())return;const p=materialPreset(id);edit(()=>{const c=config(),saved=p?.user?p.calibration:!reset&&c.materialCalibrations?.[p?.id];c.materialPresetId=p?.id||null;if(p)c.settings={...(p.user?p.settings:saved?.settings||p.settings)};if(p?.user)c.overcut={...p.overcut};if(saved)c.calibration={...saved,materialPresetId:p.id};});clear();}
  select.addEventListener('change',()=>apply(select.value));
  $('machine-material-reset').addEventListener('click',()=>apply(select.value,true));

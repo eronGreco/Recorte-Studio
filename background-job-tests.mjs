@@ -1,3 +1,4 @@
+import {sidebarControl} from './scripts/sidebar-test-navigation.mjs';
 import * as recortePaths from './scripts/test-paths.mjs';
 import {_electron as electron} from 'playwright';
 import assert from 'node:assert/strict';
@@ -28,8 +29,8 @@ try{
  const paused=await p.evaluate(async()=>(await window.desktop.cameo('state')).value);
  assert.equal(paused.state,'paused');assert.ok(paused.completed<paused.total);
  // Edit through the actual inspector while the machine job remains paused.
- await p.locator('#layers .layer-name').first().click();
- const x=Number(await p.locator('#obj-x').inputValue());await p.locator('#obj-x').fill(String(x+1));await p.locator('#obj-x').press('Tab');
+ await (await sidebarControl(p,'#layers .layer-name')).first().click();
+ const x=Number(await p.locator('#obj-x').inputValue());await (await sidebarControl(p,'#obj-x')).fill(String(x+1));await (await sidebarControl(p,'#obj-x')).press('Tab');
  assert.ok(Math.abs(Number(await p.locator('#obj-x').inputValue())-x-1)<.1);
  assert.equal((await p.evaluate(async()=>(await window.desktop.cameo('state')).value)).completed,paused.completed);
  await p.locator('#machine-job-details').click();assert.equal(await p.locator('#machine-close').isEnabled(),true);await p.locator('#machine-close').click();

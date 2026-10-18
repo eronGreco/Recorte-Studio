@@ -1,3 +1,4 @@
+import {sidebarControl} from './scripts/sidebar-test-navigation.mjs';
 import * as recortePaths from './scripts/test-paths.mjs';
 import {_electron as electron} from 'playwright';
 import assert from 'node:assert/strict';
@@ -7,7 +8,7 @@ const app=await electron.launch({args:[`${recortePaths.repoRoot}`],env:{...proce
 try{
  const p=await app.firstWindow();p.on('pageerror',e=>errors.push(e.message));p.setDefaultTimeout(15000);await p.waitForSelector('#calibration-toolbar');
  await p.locator('#file-input').setInputFiles(`${recortePaths.fixtureRoot}/contour-notch.png`);await p.waitForFunction(()=>{const i=paper.project.layers.find(l=>l.name==='art').firstChild;return i&&!i.data.pending&&i.data.traceInfo;});
- for(const [id,v]of [['obj-w','50'],['obj-x','45'],['obj-y','40']]){await p.locator('#'+id).fill(v);await p.locator('#'+id).press('Tab');}
+ for(const [id,v]of [['obj-w','50'],['obj-x','45'],['obj-y','40']]){await (await sidebarControl(p,'#'+id)).fill(v);await (await sidebarControl(p,'#'+id)).press('Tab');}
  await p.locator('#registration-open').click();await p.locator('#reg-orientation').selectOption('landscape');await p.locator('#reg-enabled').check();await p.locator('#registration-close').click();
  await p.locator('#calibration-toolbar').click();await p.waitForSelector('#calibration-preview svg');await p.waitForFunction(()=>!document.getElementById('calibration-check').disabled);
  await p.locator('#calibration-material').selectOption('photo-glossy-duplex-220');

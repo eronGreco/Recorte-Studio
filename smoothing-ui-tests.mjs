@@ -1,0 +1,30 @@
+import {_electron as electron} from 'playwright';
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+import {repoRoot,workRoot,reportsRoot} from './scripts/test-paths.mjs';
+import {normalizeRings,intersectionArea,polygonsArea} from './geometry.mjs';
+const dir=workRoot+'/smoothing-ui-'+Date.now();await fs.mkdir(dir,{recursive:true});
+const app=await electron.launch({args:[repoRoot],env:{...process.env,RECORTE_TEST_DATA:dir,RECORTE_CAMEO_REPLAY:'1'}}),errors=[],checks=[];
+try{
+ const page=await app.firstWindow();page.on('pageerror',e=>errors.push(e.message));await page.waitForFunction(()=>window.recorteReady);
+ const png=await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=600;canvas.height=180;const ctx=canvas.getContext('2d');ctx.fillStyle='#3e7156';ctx.font='130px "Segoe UI"';ctx.fillText('texto',20,140);return canvas.toDataURL().split(',')[1];});
+ const file=dir+'/texto.png';await fs.writeFile(file,Buffer.from(png,'base64'));await page.locator('#file-input').setInputFiles(file);
+ const wait=()=>page.waitForFunction(()=>{const root=paper.project.layers.find(l=>l.name==='art').firstChild;return root?.data.latestJob&&!root.data.pending;});await wait();
+ await page.locator('#obj-w').fill('40');await page.locator('#obj-w').press('Tab');await wait();await page.locator('#sidebar-cut').click();
+ const slider=async value=>{await page.locator('#cut-smoothing').evaluate((e,v)=>{e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));},String(value));await page.waitForFunction(v=>{const root=paper.project.layers.find(l=>l.name==='art').firstChild;return !root.data.pending&&root.data.traceInfo.smoothing===v;},value);};
+ const rings=()=>page.evaluate(()=>paper.project.layers.find(l=>l.name==='art').firstChild.children.find(c=>c.data.kind==='cut').children.map(path=>({isHole:!!path.data.hole,points:path.segments.map(s=>{const p=path.localToGlobal(s.point);return [p.x,p.y];})})));
+ await slider(0);const minimum=await rings();assert.equal(await page.locator('#cut-smoothing-value').textContent(),'0%');
+ await page.evaluate(()=>{const root=paper.project.layers.find(l=>l.name==='art').firstChild,r=root.children.find(c=>c instanceof paper.Raster&&c.data.kind!=='bleed');paper.view.zoom=16;paper.view.center=r.localToGlobal(new paper.Point(0,0));document.getElementById('show-grid').dispatchEvent(new Event('change'));});
+ await page.screenshot({path:reportsRoot+'/texto-suavizacao-minima.png'});
+ await slider(1);const maximum=await rings();assert.equal(await page.locator('#cut-smoothing-value').textContent(),'100%');assert.equal(maximum.length,minimum.length);assert.equal(maximum.filter(r=>r.isHole).length,minimum.filter(r=>r.isHole).length);
+ const a=normalizeRings(minimum),b=normalizeRings(maximum),areaA=polygonsArea(a),areaB=polygonsArea(b),difference=(areaA+areaB-2*intersectionArea(a,b))/Math.max(areaA,areaB);
+ assert.ok(difference<.08,'Silhueta do texto alterada: '+difference);assert.notDeepEqual(maximum,minimum);
+ await page.screenshot({path:reportsRoot+'/texto-suavizacao-maxima.png'});
+ checks.push('Texto mantém letras, curvas e vazios no máximo; diferença de silhueta conferida contra a intensidade mínima');
+ await slider(0);assert.deepEqual(await rings(),minimum);await slider(1);assert.deepEqual(await rings(),maximum);
+ checks.push('Alternar mínimo e máximo recalcula a partir da arte original, sem acumular deformações');
+ const saved=dir+'/texto.recorte';await app.evaluate(({dialog},filePath)=>dialog.showSaveDialog=async()=>({canceled:false,filePath}),saved);await page.locator('#save-btn').click();await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('Projeto salvo'));
+ await page.locator('#new-project').click();await page.locator('#file-input').setInputFiles(saved);await wait();await page.locator('#sidebar-layers').click();await page.locator('.layer-name').first().click();await page.locator('#sidebar-cut').click();assert.equal(await page.locator('#cut-smoothing').inputValue(),'1');assert.equal(await page.locator('#cut-smoothing-value').textContent(),'100%');
+ checks.push('Intensidade de 0 a 100% fica salva e reabre corretamente');
+ assert.deepEqual(errors,[]);await fs.writeFile(reportsRoot+'/smoothing-ui-tests.json',JSON.stringify({passed:true,checks,difference,minimumVertices:minimum.reduce((s,r)=>s+r.points.length,0),maximumVertices:maximum.reduce((s,r)=>s+r.points.length,0),errors},null,2));console.log(JSON.stringify({passed:true,checks,difference}));
+}finally{await app.close();}

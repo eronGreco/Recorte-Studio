@@ -30,6 +30,10 @@ Ele nasceu de problemas recorrentes no meu uso: funções básicas difíceis de 
 > [!NOTE]
 > **Em desenvolvimento ativo.** O foco atual é Windows + CAMEO 4 por USB, com AutoBlade no suporte 1 e folha A4. O código-fonte pode ser executado seguindo as instruções abaixo; ainda não há instalador publicado. A compatibilidade com outros equipamentos precisa de contribuição e validação física.
 
+## Novidades da versão 0.9.2
+
+Navegação por **Peça, Corte, Sangria, Arte, Camadas e Folha**, seleção múltipla mais clara e suavização de contornos com intensidade de **0 a 100%**. Veja todas as mudanças no [changelog](CHANGELOG.md).
+
 ## Interface
 
 <img src="docs/screenshots/editor.webp" alt="Editor do Recorte Studio com etiquetas, linhas de corte, marcas de registro e controles contextuais" width="100%" />
@@ -49,7 +53,7 @@ As imagens mostram o aplicativo real com artes de demonstração incluídas no r
 ### ✂️ O contorno acompanha a intenção do corte
 
 - Trace imagens automaticamente e escolha uma margem **para dentro ou para fora**, em milímetros.
-- Controle a **suavização** com um slider para reduzir serrilhados de imagem raster.
+- Controle a **suavização** de **0 a 100%** com um slider para reduzir serrilhados de imagem raster.
 - Escolha **preservar pontas ou arredondar cantos**. Suavizar não precisa transformar um encontro em V numa curva.
 - Inclua ou ignore vazios internos e ajuste a remoção do fundo conectado à borda.
 - Mude a cor e a espessura visual da linha de corte sem alterar a geometria enviada à máquina.

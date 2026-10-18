@@ -1,3 +1,4 @@
+import {sidebarControl} from './scripts/sidebar-test-navigation.mjs';
 import * as recortePaths from './scripts/test-paths.mjs';
 import {_electron as electron} from 'playwright';
 import assert from 'node:assert/strict';
@@ -18,7 +19,7 @@ try{
  const stats=()=>page.evaluate(()=>{const r=paper.project.layers.find(l=>l.name==='art').firstChild,cut=r.children.find(c=>c.data.kind==='cut');return{cut:JSON.stringify(r.data.cut),trace:JSON.stringify(r.data.traceInfo),job:r.data.latestJob,geometry:cut.children.map(p=>p.segments.map(s=>[s.point.x,s.point.y])),sourceInk:cut.children.map(p=>p.strokeColor?.toCSS(true)||null),previews:paper.project.layers.find(l=>l.name==='overlay').children.filter(p=>p.data.kind==='cut-preview').map(p=>({px:p.strokeWidth*paper.view.zoom,color:p.strokeColor.toCSS(true)}))};});
  const initial=await stats();assert.ok(initial.sourceInk.every(c=>c===null));assert.ok(initial.previews.every(p=>p.px===1));
  check('Padrão de 1 px, sem segunda linha por baixo');
- await page.locator('#cut-line-appearance summary').click();
+ await (await sidebarControl(page,'#cut-line-appearance summary')).click();
  const set=async(id,value)=>page.locator('#'+id).evaluate((e,v)=>{e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));},String(value));
  // Sample the actual rendered ink, not just the width property, at two zooms.
  const widths=[];
@@ -34,7 +35,7 @@ try{
   assert.ok(n>=1&&n<=2,`Ink width at zoom ${zoom}: ${n}`);widths.push(n);
  }
  check('Pixels reais conferidos: linha fina em zoom 3 e 30, sem engrossar');
- const saveTo=async(id,target,toast)=>{await app.evaluate(({dialog},filePath)=>dialog.showSaveDialog=async()=>({canceled:false,filePath}),target);await page.locator('#'+id).click();await page.waitForFunction(t=>document.getElementById('toast').textContent.includes(t),toast);return fs.readFile(target,'utf8');};
+ const saveTo=async(id,target,toast)=>{await app.evaluate(({dialog},filePath)=>dialog.showSaveDialog=async()=>({canceled:false,filePath}),target);await (await sidebarControl(page,'#'+id)).click();await page.waitForFunction(t=>document.getElementById('toast').textContent.includes(t),toast);return fs.readFile(target,'utf8');};
  const originalSVG=await saveTo('export-cut',work+'/line-before.svg','tamanho real');
  await set('cut-line-color','#087cdb');await set('cut-line-width',2.6);
  const custom=await stats();assert.ok(custom.previews.every(p=>Math.abs(p.px-2.6)<1e-10&&p.color==='#087cdb'));assert.deepEqual(custom.geometry,initial.geometry);assert.equal(custom.cut,initial.cut);assert.equal(custom.trace,initial.trace);assert.equal(custom.job,initial.job);
@@ -44,22 +45,22 @@ try{
  await page.locator('#undo').click();await waitCut();assert.equal(await page.locator('#cut-line-width').inputValue(),'1');assert.equal(await page.locator('#cut-line-color').inputValue(),'#087cdb');
  await page.locator('#redo').click();await waitCut();assert.equal(await page.locator('#cut-line-width').inputValue(),'2.6');
  check('Desfazer e refazer restauram cada ajuste de aparência');
- await page.locator('#layers .layer-name').first().click();await page.locator('#duplicate').click();await page.waitForFunction(()=>paper.project.layers.find(l=>l.name==='art').children.length===2);assert.ok((await stats()).previews.every(p=>Math.abs(p.px-2.6)<1e-10&&p.color==='#087cdb'));
+ await (await sidebarControl(page,'#layers .layer-name')).first().click();await page.locator('#duplicate').click();await page.waitForFunction(()=>paper.project.layers.find(l=>l.name==='art').children.length===2);assert.ok((await stats()).previews.every(p=>Math.abs(p.px-2.6)<1e-10&&p.color==='#087cdb'));
  check('Mesma preferência aplicada a todas as peças do projeto');
  const saved=work+'/line-appearance.recorte';const json=await saveTo('save-btn',saved,'Projeto salvo');assert.deepEqual(JSON.parse(json).production.cutAppearance,{color:'#087cdb',widthPx:2.6});
- await page.locator('#new-project').click();await page.locator('#file-input').setInputFiles(saved);await waitCut();await page.locator('#layers .layer-name').first().click();assert.equal(await page.locator('#cut-line-color').inputValue(),'#087cdb');assert.equal(await page.locator('#cut-line-width').inputValue(),'2.6');
+ await page.locator('#new-project').click();await page.locator('#file-input').setInputFiles(saved);await waitCut();await (await sidebarControl(page,'#layers .layer-name')).first().click();assert.equal(await page.locator('#cut-line-color').inputValue(),'#087cdb');assert.equal(await page.locator('#cut-line-width').inputValue(),'2.6');
  check('Salvar e abrir preserva cor e espessura');
  const full=await saveTo('export-btn',work+'/line-full.svg','SVG exportado');assert.match(full,/stroke="#087cdb"/);assert.match(full,/<image/);assert.ok((await stats()).sourceInk.every(c=>c===null));
  check('SVG completo mantém linhas visíveis sem restaurar a linha duplicada na tela');
  await page.locator('#view-mode').click();await page.locator('#canvas').click({position:{x:30,y:150}});assert.equal(await page.locator('#cut-panel').isVisible(),false);
  const point=await page.evaluate(()=>{const r=paper.project.layers.find(l=>l.name==='art').firstChild,p=r.children.find(c=>c.data.kind==='cut').firstChild;paper.view.zoom=3;paper.view.center=p.localToGlobal(p.bounds.center);document.getElementById('show-grid').dispatchEvent(new Event('change'));return paper.view.projectToView(p.localToGlobal(p.getPointAt(p.length*.125)));});
- await page.locator('#canvas').click({position:{x:point.x,y:point.y}});assert.equal(await page.locator('#cut-panel').isVisible(),true);
+ await page.locator('#canvas').click({position:{x:point.x,y:point.y}});await page.locator('#sidebar-cut').click();assert.equal(await page.locator('#cut-panel').isVisible(),true);
  check('Selecionar pelo contorno continua funcionando no modo só corte');
- await page.locator('#cut-line-reset').click();assert.equal(await page.locator('#cut-line-width').inputValue(),'1');assert.equal(await page.locator('#cut-line-color').inputValue(),'#e54878');
+ await (await sidebarControl(page,'#cut-line-reset')).click();assert.equal(await page.locator('#cut-line-width').inputValue(),'1');assert.equal(await page.locator('#cut-line-color').inputValue(),'#e54878');
  check('Restaurar padrão retorna à linha fina e rosa original');
- const legacy=JSON.parse(json);delete legacy.production.cutAppearance;await fs.writeFile(work+'/line-legacy.recorte',JSON.stringify(legacy));await page.locator('#file-input').setInputFiles(work+'/line-legacy.recorte');await waitCut();await page.locator('#layers .layer-name').first().click();assert.equal(await page.locator('#cut-line-width').inputValue(),'1');
+ const legacy=JSON.parse(json);delete legacy.production.cutAppearance;await fs.writeFile(work+'/line-legacy.recorte',JSON.stringify(legacy));await page.locator('#file-input').setInputFiles(work+'/line-legacy.recorte');await waitCut();await (await sidebarControl(page,'#layers .layer-name')).first().click();assert.equal(await page.locator('#cut-line-width').inputValue(),'1');
  check('Projetos anteriores recebem o novo padrão automaticamente');
- await page.locator('#new-project').click();await page.locator('#file-input').setInputFiles(recortePaths.fixtureRoot+'/contour-notch.png');await waitCut();await page.locator('#cut-offset').fill('-2');await page.locator('#cut-offset').press('Tab');await page.waitForFunction(()=>{const r=paper.project.layers.find(l=>l.name==='art').firstChild;return !r.data.pending&&r.data.traceInfo?.offset===-2;});
+ await page.locator('#new-project').click();await page.locator('#file-input').setInputFiles(recortePaths.fixtureRoot+'/contour-notch.png');await waitCut();await (await sidebarControl(page,'#cut-offset')).fill('-2');await (await sidebarControl(page,'#cut-offset')).press('Tab');await page.waitForFunction(()=>{const r=paper.project.layers.find(l=>l.name==='art').firstChild;return !r.data.pending&&r.data.traceInfo?.offset===-2;});
  await page.locator('#cut-line-appearance').evaluate(e=>e.open=true);await page.locator('#view-mode').click();await page.locator('#view-mode').click();
  await page.evaluate(()=>{const r=paper.project.layers.find(l=>l.name==='art').firstChild,im=r.children.find(c=>c instanceof paper.Raster&&c.data.kind!=='bleed');paper.view.zoom=20;paper.view.center=im.localToGlobal(new paper.Point((248.8/743-.5)*im.width,(374.1/1303-.5)*im.height));document.getElementById('show-grid').dispatchEvent(new Event('change'));});
  await page.locator('#toast').evaluate(e=>e.classList.remove('visible'));await page.screenshot({path:reports+'/linha-fina-controles.png'});

@@ -1,4 +1,39 @@
-# Histórico
+# Histórico de versões
+
+## [0.9.2](https://github.com/eronGreco/Recorte-Studio/releases/tag/v0.9.2) — 2026-10-18
+
+Esta publicação reúne as melhorias desenvolvidas nas versões locais 0.9.0 a 0.9.2.
+
+### Interface e navegação
+
+- Barras reorganizadas por tarefa: **Peça, Corte, Sangria, Arte, Camadas e Folha**, com ícone e texto sempre visíveis.
+- Sangria ganha uma área própria; as ferramentas à esquerda ficam agrupadas em edição, formas e texto, preparação de corte e projeto.
+- Ícones vetoriais consistentes e novo ícone de mão para mover a tela.
+- Ajuda explicativa junto ao botão **?**, sem abrir ao passar pelos campos de edição.
+- Campos, controles de cor e espessura e título do projeto alinhados na barra estreita; navegação verificada na janela mínima de 1100 × 720.
+
+### Seleção e proteção da arte
+
+- Abas de Corte, Sangria e Arte ficam indisponíveis quando não se aplicam à seleção; a navegação por teclado ignora as abas desativadas.
+- Seleção múltipla explica que tamanho, posição, rotação e alinhamento afetam as peças como conjunto.
+- Imagens e cortes prontos deixam de oferecer preenchimento, contorno de pintura ou conversão automática, inclusive em seleções múltiplas e mistas.
+- Eventos de pintura também validam a seleção, protegendo a arte e as linhas de corte. Preenchimentos indevidos de contornos antigos são removidos ao abrir projetos.
+- Preparação automática atua somente nos desenhos elegíveis e mantém os resultados selecionados.
+
+### Contornos e suavização
+
+- Suavização passa a filtrar irregularidades, com intensidade de **0 a 100%**, em vez de aumentar a simplificação até deformar curvas.
+- Preservação de pontas e encontros em V continua independente da intensidade de suavização.
+- Bordas calculadas corretamente após redimensionamento independente nos dois eixos.
+- Mais precisão nas medidas salvas para evitar alterações no contorno ao desfazer ou reabrir projetos.
+- Cache de sangria atualizado para acompanhar os contornos recalculados.
+
+### Documentação e verificação
+
+- Imagens e projeto de demonstração atualizados para a nova interface.
+- Testes adicionais de seleção, seleção múltipla, barras laterais e suavização; cenários existentes adaptados à navegação por tarefas.
+
+[Comparar com a publicação anterior](https://github.com/eronGreco/Recorte-Studio/compare/86db48718816d4a8332ff504c307b6669f8908ae...v0.9.2).
 
 ## 0.8.1 — publicação inicial do código
 

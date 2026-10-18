@@ -28,16 +28,19 @@ try {
     .every(r => r.data.kind !== 'png' || r.data.traceInfo && !r.data.pending));
   await ready();
   await page.locator('#obj-w').fill('78'); await page.locator('#obj-w').press('Tab'); await ready();
+  await page.locator('#sidebar-cut').click();
   await page.locator('#cut-offset').fill('-0.6'); await page.locator('#cut-offset').press('Tab'); await ready();
+  await page.locator('#sidebar-art').click();
   await page.locator('#piece-back-tab').click();
   const chooser = page.waitForEvent('filechooser');
   await page.locator('#assign-back').click();
   await (await chooser).setFiles(path.join(fixtureRoot, 'demo-back.png'));
   await page.waitForFunction(() => paper.project.layers.find(l => l.name === 'art').firstChild.data.piece.backSource);
   await page.locator('#piece-front-tab').click();
-  await page.locator('#bleed-details summary').click();
+  await page.locator('#sidebar-bleed').click();
   await page.locator('#bleed-enabled').check();
   await page.waitForFunction(() => paper.project.layers.find(l => l.name === 'art').firstChild.data.piece.bleedStatus?.includes('pronta'));
+  await page.locator('#sidebar-piece').click();
   if (!await page.locator('#repeat-btn').isVisible()) await page.locator('#arrange-panel summary').click();
   await page.locator('#repeat-btn').click();
   await page.locator('#repeat-cols').fill('3'); await page.locator('#repeat-rows').fill('3');
@@ -50,12 +53,14 @@ try {
   await page.locator('#fit').click();
   await page.evaluate(() => window.recorteFlush());
   await fs.copyFile(path.join(profile, 'project-autosave.recorte'), path.join(fixtureRoot, 'demo.recorte'));
+  await page.locator('#sidebar-layers').click();
   await page.locator('#layers .layer-name').first().click();
+  await page.locator('#sidebar-cut').click();
   await page.evaluate(() => {document.querySelector('.inspector-scroll').scrollTop = 0;});
   const capture = async name => {
-    await page.evaluate(() => document.getElementById('toast').classList.remove('visible'));
+    await page.evaluate(() => document.getElementById('toast').style.visibility='hidden');
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
-    const png = await page.screenshot();
+    const png = await page.screenshot({animations:'disabled'});
     await sharp(png).webp({quality: 88}).toFile(path.join(screenshots, name + '.webp'));
   };
   await capture('editor');

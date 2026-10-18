@@ -1,0 +1,47 @@
+import * as recortePaths from './scripts/test-paths.mjs';
+import {_electron as electron} from 'playwright';
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const dir=recortePaths.workRoot+'/sidebar-'+Date.now(),reports=recortePaths.reportsRoot;
+await fs.mkdir(dir,{recursive:true});await fs.copyFile(recortePaths.fixtureRoot+'/demo.recorte',dir+'/project-autosave.recorte');
+const app=await electron.launch({args:[recortePaths.repoRoot],env:{...process.env,RECORTE_TEST_DATA:dir,RECORTE_CAMEO_REPLAY:'1'}}),errors=[],checks=[];
+try{
+ const page=await app.firstWindow();page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(15000);
+ await page.waitForFunction(()=>window.recorteReady&&paper.project.layers.find(l=>l.name==='art').children.every(i=>i.data.kind!=='png'||i.data.latestJob&&!i.data.pending));
+ await page.evaluate(()=>{const layer=paper.project.layers.find(l=>l.name==='art');layer.activate();const hole=new paper.Path.Circle({center:[130,180],radius:1.5});hole.data={kind:'cut-vector',primitive:'circle',uid:'sidebar-test-hole',label:'Furo circular',layerId:'base'};document.getElementById('show-grid').dispatchEvent(new Event('change'));});
+ const tab=async id=>page.locator('#sidebar-'+id).click();
+ const pieces=await page.evaluate(()=>paper.project.layers.find(l=>l.name==='art').children.map(i=>({uid:i.data.uid,kind:i.data.kind,matrix:i.matrix.values.slice()})));
+ assert.equal(await page.locator('[role=tab]').count(),6);assert.equal(await page.locator('#page-size').isVisible(),true);
+ assert.equal(await page.locator('#sidebar-bleed').isDisabled(),true);assert.equal(await page.locator('#sidebar-piece').isDisabled(),true);assert.equal(await page.locator('#sidebar-page').getAttribute('aria-selected'),'true');
+ await tab('layers');await page.locator('.layer-name').filter({hasText:'demo-front'}).first().click();
+ await tab('bleed');assert.equal(await page.locator('#bleed-width').isVisible(),true);assert.equal(await page.locator('#bleed-details').getAttribute('open'),'');
+ await page.locator('#bleed-width').fill('2.4');await page.locator('#bleed-width').press('Tab');
+ await page.evaluate(()=>window.recorteFlush());const saved=JSON.parse(await fs.readFile(dir+'/project-autosave.recorte','utf8'));assert.ok(saved.items.filter(i=>i[1].data.kind==='png').every(i=>i[1].data.piece.bleed.width===2.4));
+ assert.equal(await page.locator('#bleed-width').inputValue(),'2.4');
+ const question=page.getByRole('button',{name:'Como funciona a sangria'});await question.click();
+ assert.equal(await page.locator('#sidebar-help-popover').isVisible(),true);
+ const anchor=await question.boundingBox(),tip=await page.locator('#sidebar-help-popover').boundingBox();assert.ok(Math.min(Math.abs(tip.y+tip.height-anchor.y),Math.abs(tip.y-anchor.y-anchor.height))<15);
+ await page.locator('#bleed-width').hover();assert.equal(await page.locator('#sidebar-help-popover').isVisible(),false);
+ await page.screenshot({path:reports+'/barras-sangria.png'});checks.push('Sangria acessível em um clique, controles editáveis e ajuda junto ao ? sem disparar sobre campos');
+ await tab('piece');assert.equal(await page.locator('#obj-w').isVisible(),true);await page.locator('#obj-name').fill('Peça de teste');await page.locator('#obj-name').press('Tab');assert.equal(await page.locator('#inspector-title').textContent(),'Peça de teste');
+ await tab('cut');assert.equal(await page.locator('#cut-offset').isVisible(),true);assert.equal(await page.locator('#bleed-width').isVisible(),false);await page.locator('#cut-line-appearance summary').click();assert.equal(await page.locator('#cut-line-color').isVisible(),true);
+ await page.screenshot({path:reports+'/barras-corte.png'});
+ await tab('art');await page.locator('#piece-back-tab').click();assert.equal(await page.locator('#assign-back').isVisible(),true);await page.locator('#piece-front-tab').click();assert.equal(await page.locator('#replace-front').isVisible(),true);
+ checks.push('Tamanho, corte e arte separados; controles da frente, verso e visualização da linha preservados');
+ await tab('layers');await page.locator('.layer-name').filter({hasText:'Furo circular'}).first().click();await tab('cut');assert.equal(await page.locator('#vector-diameter').isVisible(),true);assert.equal(await page.locator('#cut-smoothing').isVisible(),false);
+ await page.locator('#vector-edit-points').click();assert.equal(await page.locator('#node-fields').isVisible(),true);
+ await page.locator('#registration-open').click();assert.equal(await page.locator('#sidebar-page').getAttribute('aria-selected'),'true');assert.equal(await page.locator('#reg-enabled').isVisible(),true);await page.locator('#registration-close').click();assert.equal(await page.locator('#page-size').isVisible(),true);
+ checks.push('Furos mantêm controles vetoriais; marcas do scanner abrem na área Folha e fecham corretamente');
+ await page.locator('#cut-settings-open').click();await page.locator('#machine-force').hover();assert.equal(await page.locator('#cut-help-popover').isVisible(),false);await page.locator('.cut-help[aria-describedby="cut-tip-force"]').click();assert.equal(await page.locator('#cut-help-popover').isVisible(),true);await page.locator('#machine-force').fill('25');await page.locator('#machine-force').press('Tab');assert.equal(await page.locator('#cut-help-popover').isVisible(),false);await page.locator('#cut-settings-dialog .dialog-close').click();
+ checks.push('Ajuda compartilhada com Cortar continua abrindo somente pelo ? e deixa os campos livres');
+ await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setSize(1100,720));
+ await tab('layers');await page.locator('.layer-name').filter({hasText:'Peça de teste'}).first().click();await tab('bleed');
+ assert.equal(await page.locator('#bleed-width').isVisible(),true);
+ await page.screenshot({path:reports+'/barras-janela-menor.png'});assert.ok(await page.locator('.tools').evaluate(e=>e.scrollHeight<=e.clientHeight+1));
+ for(const id of ['piece','cut','bleed','art','layers','page']){const b=await page.locator('#sidebar-'+id).boundingBox();assert.ok(b.x>=0&&b.y>=0&&b.x+b.width<=1100&&b.y+b.height<400);}
+ await page.screenshot({path:reports+'/barras-janela-menor.png'});checks.push('Navegação e ferramentas acessíveis na janela mínima de 1100 × 720');
+ await page.locator('#canvas').focus();await page.keyboard.press('Control+a');assert.equal(await page.locator('#sidebar-piece').getAttribute('aria-selected'),'true');assert.equal(await page.locator('#arrange-panel').isVisible(),true);
+ const after=await page.evaluate(()=>paper.project.layers.find(l=>l.name==='art').children.map(i=>({uid:i.data.uid,kind:i.data.kind,matrix:i.matrix.values.slice()})));assert.deepEqual(after,pieces);assert.deepEqual(errors,[]);
+ checks.push('Todos os objetos, furos, posições e transformações do projeto real preservados');
+ await fs.writeFile(reports+'/sidebar-tests.json',JSON.stringify({passed:true,checks,errors},null,2));console.log(JSON.stringify({passed:true,checks}));
+}finally{await app.close();}

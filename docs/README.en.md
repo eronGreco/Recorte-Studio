@@ -35,6 +35,10 @@ require Designer Edition or above, and
 [SVG export](https://silhouetteamerica.freshdesk.com/support/solutions/articles/35000273385-business-edition-features)
 requires Business Edition. Those features are included here under MIT.
 
+## Version 0.9.2
+
+Task tabs for Piece, Cut, Bleed, Artwork, Layers and Sheet; clearer multi-selection controls; and contour smoothing from 0 to 100%. See the [changelog](../CHANGELOG.md).
+
 ## Run from source
 
 Current target: Windows 10/11, Node.js 24, Python 3.12+, CAMEO 4 over USB,

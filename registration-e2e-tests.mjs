@@ -1,3 +1,4 @@
+import {sidebarControl} from './scripts/sidebar-test-navigation.mjs';
 import * as recortePaths from './scripts/test-paths.mjs';
 import {_electron as electron} from 'playwright';
 import assert from 'node:assert/strict';
@@ -10,7 +11,7 @@ try{
  const wait=()=>page.waitForFunction(()=>{const r=paper.project.layers.find(l=>l.name==='art').firstChild;return r&&!r.data.pending&&r.data.traceInfo;});await wait();
  const matrix=await page.evaluate(()=>paper.project.layers.find(l=>l.name==='art').firstChild.children.find(c=>c instanceof paper.Raster).globalMatrix.values);
  await page.locator('#registration-open').click();await page.locator('#reg-enabled').check();assert.equal(await page.locator('#reg-orientation').inputValue(),'portrait');
- const change=async(id,value)=>{await page.locator('#'+id).fill(String(value));await page.locator('#'+id).press('Tab');};
+ const change=async(id,value)=>{await (await sidebarControl(page,'#'+id)).fill(String(value));await (await sidebarControl(page,'#'+id)).press('Tab');};
  for(const [k,v]of Object.entries({leftMm:12,topMm:15,rightMm:18,bottomMm:20,armMm:15,thicknessMm:.5}))await change('reg-'+k,v);
  const setRange=async(id,v)=>page.locator('#'+id).evaluate((e,value)=>{e.value=value;e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));},String(v));
  await setRange('reg-armMm-slider',12);await page.locator('#undo').click();await wait();assert.equal(await page.locator('#reg-armMm').inputValue(),'15');checks.push('Painel acessível, campos e sliders ao vivo; desfazer restaura o ajuste completo');
@@ -18,7 +19,7 @@ try{
  const handle=await page.evaluate(()=>{const p=paper.view.projectToView(new paper.Point(12,15)),b=document.getElementById('canvas').getBoundingClientRect();return{x:b.x+p.x,y:b.y+p.y,z:paper.view.zoom};});await page.mouse.move(handle.x,handle.y);await page.mouse.down();await page.mouse.move(handle.x+6*handle.z,handle.y+3*handle.z,{steps:8});await page.mouse.up();assert.equal(await page.locator('#reg-leftMm').inputValue(),'18');assert.equal(await page.locator('#reg-topMm').inputValue(),'18');
  const afterDrag=await page.evaluate(()=>paper.project.layers.find(l=>l.name==='art').firstChild.children.find(c=>c instanceof paper.Raster).globalMatrix.values);assert.ok(afterDrag.every((v,i)=>Math.abs(v-matrix[i])<.00001));await page.locator('#undo').click();await wait();assert.equal(await page.locator('#reg-leftMm').inputValue(),'12');checks.push('Arrastar marcador move as margens sem deslocar a arte; desfazer funciona');
  await page.screenshot({path:reports+'/marcas-configuraveis-painel.png'});
- const save=async(id,file,toast)=>{await app.evaluate(({dialog},filePath)=>dialog.showSaveDialog=async()=>({canceled:false,filePath}),file);await page.locator('#'+id).click();await page.waitForFunction(t=>document.getElementById('toast').textContent.includes(t),toast);return fs.readFile(file,'utf8');};
+ const save=async(id,file,toast)=>{await app.evaluate(({dialog},filePath)=>dialog.showSaveDialog=async()=>({canceled:false,filePath}),file);await (await sidebarControl(page,'#'+id)).click();await page.waitForFunction(t=>document.getElementById('toast').textContent.includes(t),toast);return fs.readFile(file,'utf8');};
  const file=work+'/marcas-personalizadas.recorte',raw=await save('save-btn',file,'Projeto salvo');const config=JSON.parse(raw).production.machine;assert.equal(config.registration.leftMm,12);assert.equal(config.registration.thicknessMm,.5);
  await page.locator('#registration-close').click();const xml=await save('export-btn',work+'/marcas-personalizadas.svg','SVG exportado');assert.equal((xml.match(/data-recorte-registration=/g)||[]).length,1);assert.ok(xml.includes('M12,15L17,15L17,20L12,20Z'));await page.locator('#registration-open').click();checks.push('Salvar e SVG completo incluem a configuração e as marcas visíveis');
  await page.locator('#reg-to-cut').click();await page.locator('#machine-prepare').click();await page.waitForSelector('#machine-preview svg');const pdf=work+'/marcas-personalizadas.pdf';await app.evaluate(({dialog},filePath)=>dialog.showSaveDialog=async()=>({canceled:false,filePath}),pdf);await page.locator('#machine-close').click();await page.locator('#print-open').click();await page.locator('#export-duplex').click();await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('PDF de duas páginas salvo'));await page.locator('[data-close="print-dialog"]').click();await page.locator('#machine-open').click();
