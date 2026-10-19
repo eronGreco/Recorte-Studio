@@ -28,11 +28,11 @@ Ele nasceu de problemas recorrentes no meu uso: funções básicas difíceis de 
 **A prioridade é UI/UX.** Opções precisam aparecer no contexto certo; medidas precisam ser fáceis de editar; e o resultado precisa ser visível antes de imprimir ou cortar.
 
 > [!NOTE]
-> **Em desenvolvimento ativo.** O foco atual é Windows + CAMEO 4 por USB, com AutoBlade no suporte 1 e folha A4. O código-fonte pode ser executado seguindo as instruções abaixo; ainda não há instalador publicado. A compatibilidade com outros equipamentos precisa de contribuição e validação física.
+> **Em desenvolvimento ativo.** O foco atual é Windows + CAMEO 4 por USB, com AutoBlade no suporte 1 e folha A4. Baixe o instalador para Windows nas versões publicadas ou execute pelo código-fonte seguindo as instruções abaixo. A compatibilidade com outros equipamentos precisa de contribuição e validação física.
 
-## Novidades da versão 0.9.2
+## Novidades da versão 0.10.0
 
-Navegação por **Peça, Corte, Sangria, Arte, Camadas e Folha**, seleção múltipla mais clara e suavização de contornos com intensidade de **0 a 100%**. Veja todas as mudanças no [changelog](CHANGELOG.md).
+**Instalador para Windows** com todas as dependências incluídas e verificação de novas versões a cada abertura. O programa informa se há atualização, se está atualizado ou se não conseguiu consultar o GitHub. Veja todas as mudanças no [changelog](CHANGELOG.md).
 
 ## Interface
 
@@ -135,7 +135,27 @@ flowchart LR
 
 ## Instalar e executar
 
-### Requisitos
+### Instalação pelo .exe
+
+1. Abra a [versão mais recente](https://github.com/eronGreco/Recorte-Studio/releases/latest).
+2. Baixe **Recorte-Studio-Setup-VERSÃO-x64.exe** e execute-o.
+3. Escolha a pasta de instalação e abra pelo atalho **Recorte Studio**.
+
+Se você usava o código-fonte, salve a montagem como `.recorte` e abra esse arquivo na versão instalada. A sessão local antiga continua na pasta original.
+
+O instalador inclui o aplicativo e o Python necessário para a comunicação USB. **Não é necessário instalar Node.js ou Python separadamente.** O foco é Windows 10/11 de 64 bits. O driver USBPRINT da CAMEO continua sendo necessário para cortar.
+
+O instalador ainda não tem certificado de assinatura de código; o Windows pode mostrar um aviso de editor desconhecido. O arquivo `SHA256SUMS.txt`, publicado junto dele, permite conferir sua integridade.
+
+### Atualizações
+
+A cada abertura, o programa consulta as versões públicas deste repositório no GitHub e exibe o resultado. Quando há uma versão nova, **Ver atualização** abre a página para baixar o instalador. Na ajuda, **Verificar novamente** repete a consulta.
+
+Sem conexão ou com o GitHub indisponível, o aviso informa que a consulta falhou e o editor continua funcionando. Atualizações não são instaladas automaticamente e não interrompem o corte.
+
+### Executar pelo código-fonte
+
+Requisitos para desenvolvimento:
 
 - **Windows 10/11**, ambiente atual de uso e testes.
 - **Node.js 24 LTS**, com npm.
@@ -184,7 +204,7 @@ As rotinas têm testes de geometria, interface, exportação e comunicação sim
 
 ## Privacidade e arquivos locais
 
-O processamento é local. O aplicativo não exige login, conta na Silhouette ou upload das artes. A recuperação automática, as predefinições pessoais e o histórico de máquina ficam em `data/`; os projetos salvos por padrão ficam em `projetos/`. Essas pastas são ignoradas pelo Git.
+O processamento é local. O aplicativo não exige login, conta na Silhouette ou upload das artes. A recuperação automática, as predefinições pessoais e o histórico de máquina ficam em `%APPDATA%/Recorte Studio` na versão instalada; a pasta inicial para salvar projetos é `Documentos/Recorte Studio`. Uma atualização preserva esses dados. Ao executar pelo código-fonte, são usadas as pastas locais `data/` e `projetos/`, ignoradas pelo Git. A consulta de atualizações envia ao GitHub uma solicitação de versão, sem enviar suas artes ou projetos.
 
 ## Desenvolvimento
 
@@ -193,6 +213,8 @@ npm test              # geometria, preparação de trabalhos e worker Python, se
 npm run test:ui       # testes Electron com equipamento simulado
 npm run test:all      # as duas suítes
 npm run brand         # recria PNGs e ICO a partir dos SVGs do logo
+npm run dist:win      # gera o instalador para Windows x64
+npm run test:packaged # confere o aplicativo empacotado sem Node/Python no PATH
 ```
 
 Os testes usam perfis próprios em `.test-output/`, separados dos seus projetos. A CI executa as suítes de unidade e de interface no Windows.

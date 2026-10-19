@@ -1,5 +1,16 @@
 # Histórico de versões
 
+## [0.10.0](https://github.com/eronGreco/Recorte-Studio/releases/tag/v0.10.0) — 2026-10-19
+
+- Primeiro instalador para Windows x64, com atalhos, escolha da pasta e dependências incluídas.
+- Python 3.13.16 embutido para a comunicação USB, sem exigir instalação separada; pacote oficial conferido por SHA-256.
+- Consulta ao GitHub em toda inicialização com avisos distintos para atualização disponível, versão atual e falha de consulta.
+- Verificação manual na ajuda e acesso à página da versão; nenhuma instalação automática durante o uso ou corte.
+- Dados da versão instalada ficam na pasta do usuário e são preservados nas atualizações; os projetos não são gravados na pasta do programa.
+- Construção, teste do aplicativo empacotado e publicação do instalador automatizados no GitHub, com arquivo de checksums.
+- Atualização das ações do GitHub para remover os avisos de runtime antigo; falhas históricas dos testes de arrasto permanecem corrigidas.
+- Testes de versão, rede indisponível, limites do GitHub, timeout, avisos de interface e execução sem Node/Python no PATH.
+
 ## [0.9.2](https://github.com/eronGreco/Recorte-Studio/releases/tag/v0.9.2) — 2026-10-18
 
 Esta publicação reúne as melhorias desenvolvidas nas versões locais 0.9.0 a 0.9.2.

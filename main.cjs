@@ -1,10 +1,11 @@
-const { app, BrowserWindow, Menu, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain, shell } = require('electron');
 if(process.env.RECORTE_TEST_DATA && process.env.RECORTE_TEST_HIDDEN==='1') app.disableHardwareAcceleration();
 const path = require('node:path');
 const fs = require('node:fs/promises');
 const sharp = require('sharp');
 const { PDFDocument } = require('pdf-lib');
-const dataDir = process.env.RECORTE_TEST_DATA || path.join(__dirname, 'data');
+const dataDir = process.env.RECORTE_TEST_DATA || (app.isPackaged ? path.join(app.getPath('appData'),'Recorte Studio') : path.join(__dirname,'data'));
+const projectsDir=app.isPackaged ? path.join(app.getPath('documents'),'Recorte Studio') : path.join(__dirname,'projetos');
 app.setPath('userData', dataDir);
 app.setPath('sessionData', path.join(dataDir, 'session'));
 let window,machineController;
@@ -27,8 +28,9 @@ async function createWindow() {
   if(startupButton)await window.webContents.executeJavaScript(`new Promise(resolve=>{const open=()=>{document.getElementById(${JSON.stringify(startupButton)}).click();if(${JSON.stringify(showPrintGuides)}){const arrow=document.getElementById('print-turn-enabled');if(!arrow.checked)arrow.click();}resolve();};if(window.recorteReady)open();else document.addEventListener('recorte-ready',open,{once:true});})`);
 }
 ipcMain.handle('save-svg', async (_, {svg,name})=>{
+  await fs.mkdir(projectsDir,{recursive:true});
   if(typeof svg!=='string'||svg.length>20_000_000) throw Error('Arquivo muito grande.');
-  const {canceled,filePath}=await dialog.showSaveDialog(window,{defaultPath:path.join(__dirname,'projetos',path.basename(name||'Meu projeto.svg')),filters:[{name:'Desenho SVG',extensions:['svg']}]});
+  const {canceled,filePath}=await dialog.showSaveDialog(window,{defaultPath:path.join(projectsDir,path.basename(name||'Meu projeto.svg')),filters:[{name:'Desenho SVG',extensions:['svg']}]});
   if(canceled) return null;
   await fs.writeFile(filePath,svg,'utf8');return filePath;
 });
@@ -48,7 +50,8 @@ const html='<!doctype html><html><head><title>Impressão - Recorte Studio</title
  }catch(e){preview.destroy();throw e;}
 }
 async function exportPrintPDF(payload){
- const {canceled,filePath}=await dialog.showSaveDialog(window,{defaultPath:path.join(__dirname,'projetos',path.basename(payload.name||'Impressão')+'.pdf'),filters:[{name:'PDF para impressão',extensions:['pdf']}]});if(canceled)return null;
+ await fs.mkdir(projectsDir,{recursive:true});
+ const {canceled,filePath}=await dialog.showSaveDialog(window,{defaultPath:path.join(projectsDir,path.basename(payload.name||'Impressão')+'.pdf'),filters:[{name:'PDF para impressão',extensions:['pdf']}]});if(canceled)return null;
  const preview=await makePrintWindow(payload);
  try{
 const pdf=await preview.webContents.printToPDF({printBackground:true,preferCSSPageSize:false,pageSize:{width:payload.width/25.4,height:payload.height/25.4},scale:1,margins:{top:0,bottom:0,left:0,right:0}});const fixed=await PDFDocument.load(pdf),pageW=payload.width*72/25.4,pageH=payload.height*72/25.4;for(const p of fixed.getPages()){const oldH=p.getHeight();p.translateContent(0,pageH-oldH);p.setMediaBox(0,0,pageW,pageH);p.setCropBox(0,0,pageW,pageH);}fixed.setTitle(payload.name||'Recorte Studio');fixed.setCreator('Recorte Studio');await fs.writeFile(filePath,await fixed.save());return filePath;}finally{preview.destroy();}
@@ -66,6 +69,13 @@ ipcMain.handle('cameo',async(event,{action,payload}={})=>{
   return {ok:true,value};
  }catch(error){return {ok:false,error:error.message};}
 });
-ipcMain.handle('save-file',async(_,payload)=>{const ext=payload.kind==='project'?'recorte':'svg';if(!['project','svg','cut'].includes(payload.kind)||typeof payload.content!=='string'||payload.content.length>60_000_000)throw Error('Arquivo inválido ou muito grande.');await fs.mkdir(path.join(__dirname,'projetos'),{recursive:true});const {canceled,filePath}=await dialog.showSaveDialog(window,{defaultPath:path.join(__dirname,'projetos',path.basename(payload.name||'Meu projeto')+'.'+ext),filters:[{name:ext==='recorte'?'Projeto Recorte Studio':'Desenho SVG',extensions:[ext]}]});if(canceled)return null;await fs.writeFile(filePath,payload.content,'utf8');return filePath;});
+ipcMain.handle('save-file',async(_,payload)=>{const ext=payload.kind==='project'?'recorte':'svg';if(!['project','svg','cut'].includes(payload.kind)||typeof payload.content!=='string'||payload.content.length>60_000_000)throw Error('Arquivo inválido ou muito grande.');await fs.mkdir(path.join(projectsDir),{recursive:true});const {canceled,filePath}=await dialog.showSaveDialog(window,{defaultPath:path.join(projectsDir,path.basename(payload.name||'Meu projeto')+'.'+ext),filters:[{name:ext==='recorte'?'Projeto Recorte Studio':'Desenho SVG',extensions:[ext]}]});if(canceled)return null;await fs.writeFile(filePath,payload.content,'utf8');return filePath;});
+let updatePromise;
+ipcMain.handle('updates-check',event=>{
+ if(event.sender!==window?.webContents)throw Error('Janela não autorizada.');
+ if(process.env.RECORTE_TEST_DATA)return process.env.RECORTE_TEST_UPDATES ? JSON.parse(process.env.RECORTE_TEST_UPDATES) : {status:'disabled',currentVersion:app.getVersion()};
+ return updatePromise ||= import('./updates.mjs').then(({checkRelease})=>checkRelease({currentVersion:app.getVersion()})).finally(()=>updatePromise=null);
+});
+ipcMain.handle('updates-open',async event=>{if(event.sender!==window?.webContents)throw Error('Janela não autorizada.');if(!process.env.RECORTE_TEST_DATA)await shell.openExternal('https://github.com/eronGreco/Recorte-Studio/releases/latest');});
 if(app.requestSingleInstanceLock()){app.on('second-instance',()=>{if(window){if(window.isMinimized())window.restore();window.focus();}});app.whenReady().then(createWindow);}else app.quit();
 app.on('window-all-closed',()=>app.quit());

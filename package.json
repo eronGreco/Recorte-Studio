@@ -1,8 +1,8 @@
 {
   "name": "recorte-studio",
-  "version": "0.9.2",
+  "version": "0.10.0",
   "private": true,
-  "description": "Editor local de arte, corte, sangria e impressão frente e verso",
+  "description": "Editor local de arte, corte, sangria e impressÃ£o frente e verso",
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
@@ -33,10 +33,15 @@
     "test:ui": "node scripts/run-tests.mjs ui",
     "test:all": "node scripts/run-tests.mjs all",
     "brand": "node scripts/build-brand.mjs",
-    "fixtures": "node scripts/create-fixtures.mjs"
+    "fixtures": "node scripts/create-fixtures.mjs",
+    "prepare:runtime": "node scripts/prepare-runtime.mjs",
+    "dist:win": "npm run prepare:runtime && electron-builder --win nsis --x64 --publish never",
+    "test:packaged": "node scripts/packaged-smoke.mjs"
   },
   "devDependencies": {
     "electron": "^44.9.0",
+    "electron-builder": "26.15.3",
+    "extract-zip": "2.0.1",
     "playwright": "^1.64.1"
   },
   "dependencies": {
@@ -71,5 +76,6 @@
     "nesting",
     "usbprint",
     "electron"
-  ]
+  ],
+  "productName": "Recorte Studio"
 }

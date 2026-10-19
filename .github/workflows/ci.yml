@@ -1,29 +1,67 @@
-name: Testes
+name: Testes e instalador
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
   windows:
     runs-on: windows-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - run: npm ci
       - run: npm test
       - run: npm run test:ui
-      - uses: actions/upload-artifact@v4
+      - run: npm run dist:win
+      - run: npm run test:packaged
+      - run: node scripts/release-files.mjs
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows-installer
+          path: |
+            dist/*.exe
+            dist/SHA256SUMS.txt
+            dist/RELEASE-NOTES.md
+            dist/RELEASE-TAG.txt
+          retention-days: 14
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: diagnostico-dos-testes
           path: .test-output/reports/
           retention-days: 7
+  publish:
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    needs: windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: windows-installer
+          path: installer
+      - name: Publicar versão testada
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: |
+          RELEASE_TAG="$(cat installer/RELEASE-TAG.txt)"
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Versão já publicada; os arquivos existentes foram preservados."
+          else
+            gh release create "$RELEASE_TAG" installer/*.exe installer/SHA256SUMS.txt --target "$RELEASE_COMMIT" --title "Recorte Studio $RELEASE_TAG" --notes-file installer/RELEASE-NOTES.md --latest
+          fi

@@ -1,0 +1,10 @@
+import fs from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+const root=new URL('../',import.meta.url),dist=new URL('dist/',root),pkg=JSON.parse(await fs.readFile(new URL('package.json',root),'utf8'));
+if(process.env.GITHUB_REF_TYPE==='tag' && process.env.GITHUB_REF_NAME!=='v'+pkg.version)throw Error('A tag não corresponde à versão do aplicativo.');
+const files=(await fs.readdir(dist)).filter(name=>name.endsWith('.exe'));if(files.length!==1||files[0]!==`Recorte-Studio-Setup-${pkg.version}-x64.exe`)throw Error('Instalador da versão atual não encontrado.');
+const lines=await Promise.all(files.map(async name=>createHash('sha256').update(await fs.readFile(new URL(name,dist))).digest('hex')+'  '+name));await fs.writeFile(new URL('SHA256SUMS.txt',dist),lines.join('\n')+'\n');
+const changelog=await fs.readFile(new URL('CHANGELOG.md',root),'utf8'),entry=changelog.split(/^## /m).find(s=>s.startsWith('['+pkg.version+']')||s.startsWith(pkg.version+' '));if(!entry)throw Error('Falta changelog da versão atual.');
+await fs.writeFile(new URL('RELEASE-NOTES.md',dist),'## '+entry.trim()+'\n\n### Instalar\n\nBaixe **'+files[0]+'** nesta página. Inclui o aplicativo e o Python necessário para USB. Não exige Node.js ou Python instalados separadamente. O instalador ainda não possui certificado de assinatura de código.\n');
+await fs.writeFile(new URL('RELEASE-TAG.txt',dist),'v'+pkg.version+'\n');
+console.log('Instalador, SHA-256 e notas de versão prontos.');

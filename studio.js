@@ -1,3 +1,4 @@
+import {installUpdateUI} from './update-ui.mjs';
 import {canStyleArtworkSelection} from './selection-capabilities.mjs';
 import {installSidebarUI} from './sidebar-ui.mjs';
 import {installSnapping} from './snapping.mjs';
@@ -162,3 +163,5 @@ try{fonts=await window.desktop.fonts();}catch{fonts=[{id:'segoe',family:'Segoe U
 const observer=new ResizeObserver(()=>{const r=$('board').getBoundingClientRect();P.view.viewSize=new P.Size(r.width,r.height);if(!P.view.data?.fitted){P.view.data={fitted:true};fit();}else updateView();});observer.observe($('board'));sync();setTool('select');requestAnimationFrame(fit);refreshPNGs();
 window.addEventListener('beforeunload',()=>{try{localStorage.setItem(STORE,serialized());}catch{}});
 window.recorteReady=true;document.dispatchEvent(new Event('recorte-ready'));
+
+installUpdateUI();

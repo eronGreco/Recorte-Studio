@@ -2,7 +2,7 @@
 
 ## Abrir e salvar
 
-Instale as dependências com `npm ci` e inicie com `npm start`. A tela abre um
+Baixe o instalador na [última versão](https://github.com/eronGreco/Recorte-Studio/releases/latest) e abra pelo atalho. Para executar o código-fonte, use `npm ci` e `npm start`. A tela abre um
 projeto novo ou recupera a última sessão local. Use **Salvar** para guardar um
 arquivo `.recorte` e **Abrir** para continuar depois.
 

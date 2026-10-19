@@ -8,7 +8,7 @@ de 20 unidades por milímetro e ordem vertical/horizontal nos comandos M/D.
 
 - Windows com o driver USB Printing Support.
 - CAMEO 4 conectada por USB, AutoBlade no suporte 1, folha A4.
-- Python 3.12+ disponível como `python` no PATH ou em `RECORTE_PYTHON`.
+- Na versão instalada, o Python já vem incluído. Ao executar o código-fonte sem preparar o runtime, use Python 3.12+ no PATH ou em `RECORTE_PYTHON`.
 - Nenhum outro aplicativo usando a mesma interface USB.
 
 Não é necessário instalar PyUSB ou substituir o driver por Zadig.

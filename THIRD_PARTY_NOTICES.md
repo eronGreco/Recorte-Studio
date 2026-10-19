@@ -22,3 +22,5 @@ O backend nativo em `hardware/vendor/` conserva seu aviso MIT em
 
 O logo vetorial e as artes de demonstração em `test/fixtures/` fazem parte
 deste projeto e seguem a licença MIT do repositório.
+
+O instalador inclui o Python 3.13.16 embutido oficial, sob a licença da Python Software Foundation e avisos associados; seu `LICENSE.txt` acompanha o runtime em `resources/runtime/python/`. A construção usa electron-builder (MIT), extract-zip (BSD-2-Clause) e NSIS (licenças de seus componentes).

@@ -1,7 +1,7 @@
 # Próximos passos
 
 - Refinar UI/UX a partir do uso em projetos reais.
-- Publicar uma distribuição instalável para Windows.
+- Assinar digitalmente o instalador e aprimorar o fluxo de atualização.
 - Ampliar testes de contornos muito pequenos, curvas e reentrâncias estreitas.
 - Validar fisicamente pausa/retomada, falhas de leitura e recuperação de conexão.
 - Melhorar desempenho do encaixe e apresentar seus resultados com mais clareza.
