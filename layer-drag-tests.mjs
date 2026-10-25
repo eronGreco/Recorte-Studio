@@ -7,12 +7,14 @@ const profile=workRoot+'/layer-mouse-'+Date.now();await fs.mkdir(profile,{recurs
 const doc={format:'recorte-studio',version:3,name:'Camadas',page:{w:210,h:297,preset:'a4'},production:{layers:[{id:'base',name:'Peças',visible:true},{id:'3',name:'Camada 3',visible:true},{id:'4',name:'Camada 4',visible:true}],activeLayer:'3'},items:[['Path',{segments:[[40,40],[60,40],[60,60],[40,60]],closed:true,data:{uid:'piece3',kind:'cut-vector',layerId:'3',label:'Peça da 3'}}],['Path',{segments:[[80,40],[100,40],[100,60],[80,60]],closed:true,data:{uid:'piece4',kind:'cut-vector',layerId:'4',label:'Peça da 4'}}]]};
 await fs.writeFile(profile+'/project-autosave.recorte',JSON.stringify(doc));
 const app=await electron.launch({args:[repoRoot],env:{...process.env,RECORTE_TEST_DATA:profile,RECORTE_CAMEO_REPLAY:'1',RECORTE_TEST_HIDDEN:'1'}}),errors=[];
-try{const p=await app.firstWindow();p.setDefaultTimeout(10000);p.on('pageerror',e=>errors.push(e.message));await p.waitForFunction(()=>window.recorteReady);await p.locator('#sidebar-layers').click();
+try{const p=await app.firstWindow();await p.setViewportSize({width:1100,height:720});p.setDefaultTimeout(10000);p.on('pageerror',e=>errors.push(e.message));await p.waitForFunction(()=>window.recorteReady);await p.locator('#sidebar-layers').click();
  const order=()=>p.locator('#layers>.layer-group').evaluateAll(nodes=>nodes.map(n=>n.dataset.layerId));
  const group=id=>p.locator(`.layer-group[data-layer-id="${id}"]`);
  const initialGeometry=await p.evaluate(()=>paper.project.layers.find(l=>l.name==='art').children.map(i=>({id:i.data.uid,json:i.exportJSON({asString:false,precision:12})})).sort((a,b)=>a.id.localeCompare(b.id)));
  async function drag(source,target,position){
+  await p.locator('.inspector-scroll').evaluate(n=>{n.scrollTop=n.scrollHeight;});
   await source.scrollIntoViewIfNeeded();await target.scrollIntoViewIfNeeded();const a=await source.boundingBox(),b=await target.boundingBox();assert.ok(a&&b);
+  assert.ok(b.y+position>0&&b.y+position<p.viewportSize().height,'Drop destination must remain inside the viewport');
   await p.mouse.move(a.x+a.width/2,a.y+a.height/2);await p.mouse.down();await p.mouse.move(a.x+a.width/2+8,a.y+a.height/2,{steps:4});
   await p.mouse.move(b.x+b.width/2,b.y+position,{steps:16});
   // Native dragover needs a second move over the destination, including on CI.
