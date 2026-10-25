@@ -12,10 +12,10 @@ try{
  await page.locator('#file-input').setInputFiles(recortePaths.fixtureRoot+'/contour-notch.png');await waitCut();
  for(const [id,value]of [['obj-w','55'],['obj-x','50'],['obj-y','40']]){await (await sidebarControl(page,'#'+id)).fill(value);await (await sidebarControl(page,'#'+id)).press('Tab');}await waitCut();
  if(replay){await (await sidebarControl(page,'#piece-back-tab')).click();const chooser=page.waitForEvent('filechooser');await (await sidebarControl(page,'#assign-back')).click();await(await chooser).setFiles(recortePaths.fixtureRoot+'/contour-notch.png');await page.waitForFunction(()=>paper.project.layers.find(l=>l.name==='art').firstChild?.data.piece?.backSource);}
- await page.locator('#registration-open').click();await page.locator('#reg-orientation').selectOption('landscape');await page.locator('#registration-close').click();await page.locator('#print-open').click();
+ await page.locator('#registration-open').click();await page.locator('#reg-orientation').selectOption('landscape');await page.locator('#reg-enabled').check();await page.locator('#registration-close').click();await page.locator('#print-open').click();
  const file=work+'/cameo-ui-print.pdf';await app.evaluate(({dialog},filePath)=>dialog.showSaveDialog=async()=>({canceled:false,filePath}),file);await page.locator('#export-duplex').click();await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('PDF de duas páginas salvo'));
  const pdf=await PDFDocument.load(await fs.readFile(file));assert.equal(pdf.getPageCount(),2);for(const p of pdf.getPages()){assert.ok(Math.abs(p.getWidth()-297*72/25.4)<.01);assert.ok(Math.abs(p.getHeight()-210*72/25.4)<.01);}checks.push('Impressão pelo menu existente exporta PDF de frente e verso em A4 paisagem e tamanho físico exato');
- await page.locator('[data-close="print-dialog"]').click();await page.locator('#machine-open').click();await page.locator('#machine-landscape').click();
+ await page.locator('[data-close="print-dialog"]').click();await page.locator('#machine-open').click();await page.locator('.machine-diagnostics > summary').click();
  assert.equal(await page.locator('#machine-print,#machine-pdf,#machine-printed').count(),0);
 
  const markCount=await page.evaluate(()=>paper.project.layers.find(l=>l.name==='overlay').children.filter(c=>c.data.kind==='machine-marks').length);assert.equal(markCount,1);

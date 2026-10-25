@@ -1,4 +1,5 @@
 const { app, BrowserWindow, Menu, dialog, ipcMain, shell } = require('electron');
+if(process.platform==='win32')app.setAppUserModelId('com.erongreco.recortestudio');
 if(process.env.RECORTE_TEST_DATA && process.env.RECORTE_TEST_HIDDEN==='1') app.disableHardwareAcceleration();
 const path = require('node:path');
 const fs = require('node:fs/promises');
@@ -8,7 +9,9 @@ const dataDir = process.env.RECORTE_TEST_DATA || (app.isPackaged ? path.join(app
 const projectsDir=app.isPackaged ? path.join(app.getPath('documents'),'Recorte Studio') : path.join(__dirname,'projetos');
 app.setPath('userData', dataDir);
 app.setPath('sessionData', path.join(dataDir, 'session'));
-let window,machineController;
+let window,machineController,workspace;
+// Existing editor suites run one view; dedicated workspace tests exercise real tabs.
+const useWorkspace=!process.env.RECORTE_TEST_DATA||process.env.RECORTE_TEST_WORKSPACE==='1';
 async function createWindow() {
   Menu.setApplicationMenu(null);
   const hiddenTestWindow=!!process.env.RECORTE_TEST_DATA&&process.env.RECORTE_TEST_HIDDEN==='1';
@@ -19,13 +22,17 @@ async function createWindow() {
   let transport;
   const testMode=!!process.env.RECORTE_TEST_DATA&&process.env.RECORTE_CAMEO_REPLAY==='1';
   if(testMode)transport=(await import('./hardware/replay-transport.mjs')).replayTransport;
-  machineController=createMachineController({dataDir,testMode,transport,exportPDF:exportPrintPDF,printSheet:printPreparedSheet,onState:state=>{if(!window.isDestroyed())window.webContents.send('cameo-state',state);}});
-  await window.loadFile('studio.html');
+  const makeController=(onState,projectId)=>createMachineController({dataDir,calibrationDataDir:projectId?path.join(dataDir,'projects',projectId+'-machine'):dataDir,testMode,transport,exportPDF:exportPrintPDF,printSheet:printPreparedSheet,onState});
+  if(useWorkspace){workspace=require('./project-workspace.cjs').createProjectWorkspace({window,dataDir,root:__dirname,createController:makeController});await window.loadFile('workspace.html');await workspace.start();}
+  else{machineController=makeController(state=>{if(!window.isDestroyed())window.webContents.send('cameo-state',state);});await window.loadFile('studio.html');}
   let closing=false;
-  window.on('close',event=>{if(closing)return;event.preventDefault();if(machineController?.busy){window.webContents.send('cameo-state',{...machineController.getState(),message:'Aguarde a operação terminar para fechar. Para interromper o movimento, use Pausar na CAMEO.'});return;}window.webContents.executeJavaScript('window.recorteFlush ? window.recorteFlush() : Promise.resolve()').catch(()=>{}).finally(()=>{closing=true;window.destroy();});});
+  window.on('close',event=>{if(closing)return;event.preventDefault();if(workspace?.busy||machineController?.busy){if(workspace){workspace.warnBusy();return;}window.webContents.send('cameo-state',{...machineController.getState(),message:'Aguarde a operação terminar para fechar. Para interromper o movimento, use Pausar na CAMEO.'});return;}
+   const flush=workspace?workspace.flushAll():window.webContents.executeJavaScript('window.recorteFlush ? window.recorteFlush() : Promise.resolve()');flush.then(()=>{closing=true;workspace?.dispose();window.destroy();}).catch(error=>dialog.showMessageBox(window,{type:'error',message:'Não foi possível guardar a sessão. O programa continua aberto.',detail:error.message}));
+  });
+  window.on('closed',()=>workspace?.dispose());
   const showPrintGuides=process.argv.includes('--show-print-guides');
   const startupButton=showPrintGuides||process.argv.includes('--show-print')?'print-open':process.argv.includes('--show-material-save')?'machine-material-save':process.argv.includes('--show-blade-check')?'blade-check-open':null;
-  if(startupButton)await window.webContents.executeJavaScript(`new Promise(resolve=>{const open=()=>{document.getElementById(${JSON.stringify(startupButton)}).click();if(${JSON.stringify(showPrintGuides)}){const arrow=document.getElementById('print-turn-enabled');if(!arrow.checked)arrow.click();}resolve();};if(window.recorteReady)open();else document.addEventListener('recorte-ready',open,{once:true});})`);
+  if(startupButton&&!workspace)await window.webContents.executeJavaScript(`new Promise(resolve=>{const open=()=>{document.getElementById(${JSON.stringify(startupButton)}).click();if(${JSON.stringify(showPrintGuides)}){const arrow=document.getElementById('print-turn-enabled');if(!arrow.checked)arrow.click();}resolve();};if(window.recorteReady)open();else document.addEventListener('recorte-ready',open,{once:true});})`);
 }
 ipcMain.handle('save-svg', async (_, {svg,name})=>{
   await fs.mkdir(projectsDir,{recursive:true});
@@ -39,8 +46,8 @@ ipcMain.handle('fonts',async()=>{const available=[];for(const [id,family,file]of
 ipcMain.handle('font-data',async(_,id)=>{const choice=fontChoices.find(f=>f[0]===id);if(!choice)throw Error('Fonte não reconhecida.');return new Uint8Array(await fs.readFile(path.join(process.env.WINDIR||'C:\\Windows','Fonts',choice[2])));});
 ipcMain.handle('decode-image',async(_,bytes)=>{if(!(bytes instanceof Uint8Array)||bytes.length>60_000_000)throw Error('Use uma imagem de até 60 MB.');const image=sharp(Buffer.from(bytes),{limitInputPixels:60_000_000,pages:1}).rotate();const meta=await image.metadata();const png=await image.png().toBuffer();return{source:'data:image/png;base64,'+png.toString('base64'),format:meta.format,pages:meta.pages||1};});
 let autosaveQueue=Promise.resolve();
-ipcMain.handle('autosave',(_,content)=>{if(typeof content!=='string'||content.length>180_000_000)throw Error('Projeto muito grande para recuperação automática.');const task=autosaveQueue.catch(()=>{}).then(async()=>{await fs.mkdir(dataDir,{recursive:true});const file=path.join(dataDir,'project-autosave.recorte');await fs.writeFile(file+'.tmp',content,'utf8');await fs.rename(file+'.tmp',file);});autosaveQueue=task;return task;});
-ipcMain.handle('load-autosave',async()=>{try{return await fs.readFile(path.join(dataDir,'project-autosave.recorte'),'utf8');}catch(e){if(e.code==='ENOENT')return null;throw e;}});
+ipcMain.handle('autosave',(event,content)=>{if(workspace)return workspace.autosave(event.sender,content);if(typeof content!=='string'||content.length>180_000_000)throw Error('Projeto muito grande para recuperação automática.');const task=autosaveQueue.catch(()=>{}).then(async()=>{await fs.mkdir(dataDir,{recursive:true});const file=path.join(dataDir,'project-autosave.recorte');await fs.writeFile(file+'.tmp',content,'utf8');await fs.rename(file+'.tmp',file);});autosaveQueue=task;return task;});
+ipcMain.handle('load-autosave',async event=>{if(workspace)return workspace.load(event.sender);try{return await fs.readFile(path.join(dataDir,'project-autosave.recorte'),'utf8');}catch(e){if(e.code==='ENOENT')return null;throw e;}});
 async function makePrintWindow(payload){
 if(!payload||!Array.isArray(payload.pages)||payload.pages.length<1||payload.pages.length>2||payload.pages.some(s=>typeof s!=='string'||s.length>100_000_000)||!Number.isFinite(payload.width)||!Number.isFinite(payload.height)||payload.width<10||payload.height<10||payload.width>2000||payload.height>2000)throw Error('Documento de impressão inválido.');
  const preview=new BrowserWindow({show:false,parent:window,webPreferences:{sandbox:true,contextIsolation:true,nodeIntegration:false}});
@@ -58,10 +65,11 @@ const pdf=await preview.webContents.printToPDF({printBackground:true,preferCSSPa
 }
 async function printPreparedSheet(payload){
  const preview=await makePrintWindow(payload);
- try{return await new Promise((resolve,reject)=>preview.webContents.print({silent:false,printBackground:true,margins:{marginType:'none'},pageSize:{width:Math.round(payload.width*1000),height:Math.round(payload.height*1000)},scaleFactor:100},(success,reason)=>{if(success)resolve(true);else if(reason==='cancelled'||reason==='canceled')resolve(false);else reject(Error(reason||'A impressora não aceitou o trabalho.'));}));}finally{preview.destroy();}
+ try{return await new Promise((resolve,reject)=>preview.webContents.print({silent:false,printBackground:true,margins:{marginType:'none'},pageSize:{width:Math.round(payload.width*1000),height:Math.round(payload.height*1000)},scaleFactor:100,landscape:false,pagesPerSheet:1},(success,reason)=>{if(success)resolve(true);else if(reason==='cancelled'||reason==='canceled')resolve(false);else reject(Error(reason||'A impressora não aceitou o trabalho.'));}));}finally{preview.destroy();}
 }
 ipcMain.handle('export-print',(_,payload)=>exportPrintPDF(payload));
 ipcMain.handle('cameo',async(event,{action,payload}={})=>{
+ if(workspace){try{const allowed=['state','status','prepare','export','print','register','cut','control','calibrationHistory','prepareCalibration','calibrate','acceptCalibration','adjustBlade','bladeVerification','recordBladeObservation','listMaterialPresets','saveMaterialPreset'];if(!allowed.includes(action))throw Error('Ação inválida.');return {ok:true,value:await workspace.cameo(event.sender,action,payload)};}catch(error){return {ok:false,error:error.message};}}
  if(event.sender!==window?.webContents||!machineController)return {ok:false,error:'Janela não autorizada.'};
  try{
   if(!['state','status','prepare','export','print','register','cut','control','calibrationHistory','prepareCalibration','calibrate','acceptCalibration','adjustBlade','bladeVerification','recordBladeObservation','listMaterialPresets','saveMaterialPreset'].includes(action))throw Error('Ação de máquina inválida.');
@@ -69,13 +77,14 @@ ipcMain.handle('cameo',async(event,{action,payload}={})=>{
   return {ok:true,value};
  }catch(error){return {ok:false,error:error.message};}
 });
-ipcMain.handle('save-file',async(_,payload)=>{const ext=payload.kind==='project'?'recorte':'svg';if(!['project','svg','cut'].includes(payload.kind)||typeof payload.content!=='string'||payload.content.length>60_000_000)throw Error('Arquivo inválido ou muito grande.');await fs.mkdir(path.join(projectsDir),{recursive:true});const {canceled,filePath}=await dialog.showSaveDialog(window,{defaultPath:path.join(projectsDir,path.basename(payload.name||'Meu projeto')+'.'+ext),filters:[{name:ext==='recorte'?'Projeto Recorte Studio':'Desenho SVG',extensions:[ext]}]});if(canceled)return null;await fs.writeFile(filePath,payload.content,'utf8');return filePath;});
+ipcMain.handle('save-file',async(_,payload)=>{const ext=payload.kind==='project'?'recorte':'svg';if(!['project','svg','cut'].includes(payload.kind)||typeof payload.content!=='string'||payload.content.length>60_000_000)throw Error('Arquivo inválido ou muito grande.');await fs.mkdir(path.join(projectsDir),{recursive:true});const {canceled,filePath}=await dialog.showSaveDialog(window,{defaultPath:path.join(projectsDir,path.basename(payload.name||'Meu projeto')+'.'+ext),filters:[{name:ext==='recorte'?'Projeto Recorte Studio':'Desenho SVG',extensions:[ext]}]});if(canceled)return null;let content=payload.content;if(ext==='recorte'){const project=JSON.parse(content);project.name=path.basename(filePath,'.recorte');content=JSON.stringify(project);}await fs.writeFile(filePath,content,'utf8');return filePath;});
 let updatePromise;
+ipcMain.handle('workspace',(event,{action,payload})=>{if(!workspace)throw Error('As abas não estão ativas.');return workspace.action(event.sender,action,payload);});
 ipcMain.handle('updates-check',event=>{
- if(event.sender!==window?.webContents)throw Error('Janela não autorizada.');
+ if(event.sender!==window?.webContents&&!workspace?.has(event.sender))throw Error('Janela não autorizada.');
  if(process.env.RECORTE_TEST_DATA)return process.env.RECORTE_TEST_UPDATES ? JSON.parse(process.env.RECORTE_TEST_UPDATES) : {status:'disabled',currentVersion:app.getVersion()};
  return updatePromise ||= import('./updates.mjs').then(({checkRelease})=>checkRelease({currentVersion:app.getVersion()})).finally(()=>updatePromise=null);
 });
-ipcMain.handle('updates-open',async event=>{if(event.sender!==window?.webContents)throw Error('Janela não autorizada.');if(!process.env.RECORTE_TEST_DATA)await shell.openExternal('https://github.com/eronGreco/Recorte-Studio/releases/latest');});
+ipcMain.handle('updates-open',async event=>{if(event.sender!==window?.webContents&&!workspace?.has(event.sender))throw Error('Janela não autorizada.');if(!process.env.RECORTE_TEST_DATA)await shell.openExternal('https://github.com/eronGreco/Recorte-Studio/releases/latest');});
 if(app.requestSingleInstanceLock()){app.on('second-instance',()=>{if(window){if(window.isMinimized())window.restore();window.focus();}});app.whenReady().then(createWindow);}else app.quit();
 app.on('window-all-closed',()=>app.quit());

@@ -185,6 +185,59 @@ def write_exact(k32, handle, data, timeout_ms=5000):
 original._write_exact = write_exact
 
 
+# A long OVERLAPPED write may already be executing partly when its 5s write
+# deadline expires. Bound motion batches and drain each one with READY, instead
+# of sending the whole contour or retrying an uncertain write.
+PATH_BLOCK_BYTES = 1024
+
+
+def path_blocks(body, max_bytes=PATH_BLOCK_BYTES):
+    if not isinstance(body, bytes) or not body or not body.endswith(b'\x03'):
+        raise ValueError('Trajeto sem terminador de comando.')
+    if type(max_bytes) is not int or not 1 <= max_bytes <= PATH_BLOCK_BYTES:
+        raise ValueError('Tamanho de bloco USB inválido.')
+    blocks, pending = [], bytearray()
+    for value in body.split(b'\x03')[:-1]:
+        if not value:
+            raise ValueError('Comando vazio no trajeto.')
+        command = value + b'\x03'
+        if len(command) > max_bytes:
+            raise ValueError('Um comando ultrapassa o limite do bloco USB.')
+        if len(pending) + len(command) > max_bytes:
+            blocks.append(bytes(pending))
+            pending.clear()
+        pending.extend(command)
+    if pending:
+        blocks.append(bytes(pending))
+    return blocks
+
+
+def send_path(session, path, pass_number):
+    body = path['body'].encode('ascii')
+    blocks = path_blocks(body)
+    confirmed = 0
+    for index, block in enumerate(blocks, 1):
+        detail = dict(pathId=path['id'], passNumber=pass_number,
+                      block=index, blocks=len(blocks), blockBytes=len(block),
+                      pathBytes=len(body), confirmedBytes=confirmed)
+        emit(kind='log', phase='path-block-send',
+             message=f'Enviando trecho {index}/{len(blocks)} do contorno · passada {pass_number}.', **detail)
+        try:
+            write_exact(session.k32, session.handle, block)
+            session.wait_ready(timeout=180.0)
+        except Exception as error:
+            emit(kind='log', phase='path-block-failed',
+                 message='Envio interrompido; o trecho não foi repetido.', **detail)
+            raise original.CameoError(
+                f'Falha no trecho {index}/{len(blocks)} do contorno, passada {pass_number}. '
+                f'{error} O trecho pode ter sido cortado parcialmente e não foi reenviado.'
+            ) from error
+        confirmed += len(block)
+        emit(kind='log', phase='path-block-ready',
+             message=f'Trecho {index}/{len(blocks)} concluído pela CAMEO.',
+             **{**detail, 'confirmedBytes': confirmed})
+
+
 class Session(original.CameoSession):
     @contextlib.contextmanager
     def status_reader(self):
@@ -334,8 +387,7 @@ def run(action, job=None, session_factory=Session, control=None):
                     if stopped:
                         return stopped
                     emit(kind='state', state='cutting', message=f"Teste {trial['label']} · passada {repeat + 1} de {s['passes']}…", completed=done, total=total)
-                    write_exact(session.k32, session.handle, trial['paths'][0]['body'].encode('ascii'))
-                    session.wait_ready(timeout=180.0)
+                    send_path(session, trial['paths'][0], repeat + 1)
                     done += 1
                     emit(kind='state', state='cutting', message=f"Teste {trial['label']} · passada concluída.", completed=done, total=total)
             session.home()
@@ -350,8 +402,7 @@ def run(action, job=None, session_factory=Session, control=None):
                 if stopped:
                     return stopped
                 emit(kind="state", state="cutting", message=f"Cortando contorno {done + 1} de {total}…", completed=done, total=total)
-                write_exact(session.k32, session.handle, path["body"].encode("ascii"))
-                session.wait_ready(timeout=180.0)
+                send_path(session, path, repeat + 1)
                 done += 1
                 emit(kind='state', state='cutting', message=f"{done} de {total} passadas concluídas.", completed=done, total=total)
         emit(kind="state", state="homing", message="Finalizando o trabalho…", completed=done, total=total)

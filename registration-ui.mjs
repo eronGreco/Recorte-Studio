@@ -10,8 +10,8 @@ export function installRegistrationUI(env){
  function apply(patch){config().registration=normalized(patch);}
  function commit(){if(sliderBefore!==null){if(sliderBefore!==serialized())pushHistory(sliderBefore);sliderBefore=null;persist();syncEditor();}}
  function sync(){const c=machineConfig(getDoc()),p={...REGISTRATION_DEFAULTS,...c.registration},valid=machineSheet(getDoc());$('reg-enabled').checked=!!c.enabled;$('reg-reserved').checked=c.showReserved!==false;$('reg-linked').checked=!!c.linkInsets;
-  $('reg-orientation').value=valid?(getDoc().page.w>getDoc().page.h?'landscape':'portrait'):'other';
-  $('reg-measures').textContent=valid?`${getDoc().page.w} × ${getDoc().page.h} mm · preto impresso; hachura só na tela`:'Escolha A4 para configurar as marcas da CAMEO 4.';
+  $('reg-orientation').value=getDoc().page.w>getDoc().page.h?'landscape':'portrait';
+  $('reg-measures').textContent=valid?`${getDoc().page.w} × ${getDoc().page.h} mm · preto impresso; hachura só na tela`:'Ajuste a folha ou as margens: a leitura de marcas aceita até 304,8 × 304,8 mm.';
   for(const k of REGISTRATION_KEYS){$('reg-'+k).value=p[k];const slider=$('reg-'+k+'-slider');if(slider)slider.value=p[k];}
   const policy=scannerPolicy(c);$('reg-border').value=policy.whiteBorderMm;$('reg-respect-scan').checked=policy.respectScanArea;$('reg-clearance').value=policy.clearanceMm;$('reg-white-mask').checked=policy.whiteMaskEnabled;
   for(const input of $('reg-fields').querySelectorAll('input'))input.disabled=!valid||!c.enabled;
@@ -24,7 +24,7 @@ export function installRegistrationUI(env){
  $('registration-open').onclick=open;$('registration-close').onclick=close;
  $('tool-list').addEventListener('click',e=>{if(opened()&&e.target.closest('[data-tool]'))close();});
  $('reg-enabled').onchange=e=>edit(()=>config().enabled=e.target.checked);
- $('reg-orientation').onchange=e=>{if(e.target.value==='other')return;edit(()=>{getDoc().page={w:e.target.value==='landscape'?297:210,h:e.target.value==='landscape'?210:297,preset:'a4'};});fit();};
+ $('reg-orientation').onchange=e=>{if(e.target.value==='other')return;edit(()=>{const p=getDoc().page,a=Math.min(p.w,p.h),b=Math.max(p.w,p.h);getDoc().page={...p,w:e.target.value==='landscape'?b:a,h:e.target.value==='landscape'?a:b};});fit();};
  $('reg-linked').onchange=e=>edit(()=>config().linkInsets=e.target.checked);
  $('reg-reserved').onchange=e=>edit(()=>config().showReserved=e.target.checked);
  for(const k of REGISTRATION_KEYS){

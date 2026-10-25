@@ -4,7 +4,7 @@
 
 Baixe o instalador na [última versão](https://github.com/eronGreco/Recorte-Studio/releases/latest) e abra pelo atalho. Para executar o código-fonte, use `npm ci` e `npm start`. A tela abre um
 projeto novo ou recupera a última sessão local. Use **Salvar** para guardar um
-arquivo `.recorte` e **Abrir** para continuar depois.
+arquivo `.recorte` e **Abrir** para continuar depois. Criar ou abrir outro projeto mantém os anteriores em abas na base da janela. Cada aba tem suas peças e seu histórico; **Ctrl+Shift+T** reabre a última aba fechada.
 
 O exemplo público `test/fixtures/demo.recorte` contém artes criadas para a
 demonstração. Abra esse arquivo pelo botão **Abrir** para conhecer o fluxo.
@@ -23,7 +23,7 @@ desenhe um círculo e vincule-o à peça. Use as guias magnéticas para alinhar.
 
 ## Montar a folha
 
-Ative as marcas de registro para o fluxo CAMEO. Configure a orientação da A4,
+Ative as marcas de registro para o fluxo CAMEO. Na aba **Folha**, escolha o formato e a orientação; configure
 distâncias das bordas, comprimento, espessura e proteção do scanner.
 
 Use **Encaixar na folha** depois de definir as medidas. Confira as peças que
@@ -32,7 +32,7 @@ O verso acompanha automaticamente as posições correspondentes.
 
 ## Imprimir
 
-Abra **Impressão**, selecione a forma de virar a folha e confira as duas faces.
+Abra **Impressão** e escolha as faces. Sem arte de verso, o PDF tem somente a frente. Para frente e verso, selecione a forma de virar a folha e confira as duas faces.
 Você pode imprimir ou salvar o PDF. Use **100% / tamanho real** no driver;
 ajustar à página muda a distância física entre arte e marcas.
 
@@ -42,7 +42,7 @@ produzir um lote. Ajustes X/Y corrigem pequenos deslocamentos do verso.
 
 ## Testar o papel e cortar
 
-Selecione uma predefinição de material ou seus ajustes pessoais. Em **Teste de
+Abra **Cortar**, busque e selecione o material no mesmo campo ou edite os ajustes. **Testar e calibrar este papel** fica junto deles. A CAMEO só aceita um envio por vez; os controles pertencem à aba que iniciou o trabalho. Em **Teste de
 papel**, delimite uma área livre que comporte os seis testes A–F. O programa
 mostra se a região é pequena demais ou invade peças e marcas.
 

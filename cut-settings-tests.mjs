@@ -24,22 +24,22 @@ try{
  }
  await p.locator('#cut-settings-open').click();await checkFields();checks.push('Hover/click nos quatro campos não abre ajuda; ? funciona e explicação não cobre inputs');
  await p.locator('#machine-force').focus();await p.keyboard.press('Shift+Tab');await noHelp();await p.keyboard.press('Enter');assert.equal(await help.getAttribute('data-active'),'cut-tip-force');await p.keyboard.press('Escape');await noHelp();assert.ok(await p.locator('#cut-settings-dialog').isVisible());
- await p.locator('#machine-overcut-enabled').check();await p.locator('#machine-overcut-start').fill('0.25');await p.locator('#machine-overcut-start').press('Tab');
+ await p.locator('.cut-advanced > summary').click();await p.locator('#machine-overcut-enabled').check();await p.locator('#machine-overcut-start').fill('0.25');await p.locator('#machine-overcut-start').press('Tab');
  for(const preset of MATERIAL_PRESETS){
-  await p.locator('#machine-material').selectOption(preset.id);
+  await p.locator('#machine-material').selectOption(preset.id,{force:true});
   for(const [key,value]of Object.entries(preset.settings))assert.equal(await p.locator('#machine-'+key).inputValue(),String(value));
   assert.equal(await p.locator('#machine-material-reset').isDisabled(),true);
  }
  const photo=materialPreset('photo-glossy-duplex-220');assert.equal(photo.cutMode,'through');assert.equal(photo.adhesive,false);assert.equal(photo.grammage,220);assert.deepEqual(photo.settings,{depth:4,force:25,speed:2,passes:2});
  assert.deepEqual(searchMaterials('220g').map(p=>p.id),[photo.id]);assert.equal(searchMaterials('fotografico nao adesivo').length,3);
  const previous=await p.locator('#machine-force').inputValue();await p.locator('#machine-material-search').fill('220g');assert.equal(await p.locator('#machine-force').inputValue(),previous);assert.equal(await p.locator('#machine-material option[value="'+photo.id+'"]').count(),1);assert.match(await p.locator('#machine-material-results').textContent(),/1 material encontrado/);
- await p.locator('#machine-material').selectOption(photo.id);assert.equal(await p.locator('#machine-force').inputValue(),'25');assert.match(await p.locator('#machine-material-note').textContent(),/atravessar a folha inteira/);assert.match(await p.locator('#machine-material-state').textContent(),/ainda não calibrado/);
+ await p.locator('#machine-material').selectOption(photo.id,{force:true});assert.equal(await p.locator('#machine-force').inputValue(),'25');assert.match(await p.locator('#machine-material-note').textContent(),/atravessar a folha inteira/);assert.match(await p.locator('#machine-material-state').textContent(),/ainda não calibrado/);
  await p.locator('#machine-force').fill('23');await p.locator('#machine-force').press('Tab');await p.locator('#machine-material-search').fill('papel inexistente xyz');assert.equal(await p.locator('#machine-material').inputValue(),photo.id);assert.equal(await p.locator('#machine-force').inputValue(),'23');assert.match(await p.locator('#machine-material-results').textContent(),/Nenhum material/);
  await p.locator('#machine-material-search').fill('fotografico nao adesivo');assert.equal(await p.locator('#machine-material option').count(),4);await p.locator('#machine-material-search').fill('');assert.equal(await p.locator('#machine-material option').count(),MATERIAL_PRESETS.length+1);
  checks.push('Busca ignora acentos, aceita 220g e não altera ajustes; sem resultados preserva o material atual; três fotográficos não adesivos para corte total');
- await p.locator('#machine-material').selectOption('gm-card');await p.locator('#machine-force').fill('19');await p.locator('#machine-force').press('Tab');assert.match(await p.locator('#machine-material-state').textContent(),/Personalizado/);
+ await p.locator('#machine-material').selectOption('gm-card',{force:true});await p.locator('#machine-force').fill('19');await p.locator('#machine-force').press('Tab');assert.match(await p.locator('#machine-material-state').textContent(),/Personalizado/);
  await p.locator('#cut-settings-close').click();await p.locator('#machine-open').click();assert.equal(await p.locator('#machine-force').inputValue(),'19');await checkFields();
- await p.locator('#machine-material').selectOption(photo.id);await p.locator('#machine-force').fill('23');await p.locator('#machine-force').press('Tab');assert.equal(await p.locator('#machine-overcut-start').inputValue(),'0.25');
+ await p.locator('#machine-material').selectOption(photo.id,{force:true});await p.locator('#machine-force').fill('23');await p.locator('#machine-force').press('Tab');assert.equal(await p.locator('#machine-overcut-start').inputValue(),'0.25');
  await p.locator('#machine-close').click();
  const path=profile+'/material.recorte';await app.evaluate(({dialog},filePath)=>dialog.showSaveDialog=async()=>({canceled:false,filePath}),path);await p.locator('#save-btn').click();await p.waitForFunction(()=>document.getElementById('toast').textContent.includes('Projeto salvo'));
  const saved=JSON.parse(await fs.readFile(path,'utf8'));assert.equal(saved.production.machine.materialPresetId,photo.id);assert.deepEqual(saved.production.machine.settings,{...photo.settings,force:23});assert.equal(saved.production.machine.overcut.startMm,.25);

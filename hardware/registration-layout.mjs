@@ -8,7 +8,8 @@ export function registrationGeometry(profileId,options={}){
  if(!options||typeof options!=='object'||Array.isArray(options)||Object.keys(options).some(k=>!['widthMm','heightMm',...REGISTRATION_KEYS].includes(k)))throw Error('Configuração das marcas inválida.');
  const p={widthMm:base.pageWidthMm,heightMm:base.pageHeightMm,...REGISTRATION_DEFAULTS,...options};
  if(!Object.values(p).every(v=>typeof v==='number'&&Number.isFinite(v)))throw Error('As medidas das marcas precisam ser números válidos.');
- if(!((p.widthMm===297&&p.heightMm===210)||(p.widthMm===210&&p.heightMm===297)))throw Error('A CAMEO 4 está preparada para A4 em retrato ou paisagem.');
+ if(p.widthMm<60||p.heightMm<60||p.widthMm>304.8||p.heightMm>304.8)throw Error('A leitura de marcas da CAMEO 4 aceita folhas entre 60 e 304,8 mm em cada lado.');
+ p.widthMm=quantizeSu(p.widthMm)/20;p.heightMm=quantizeSu(p.heightMm)/20;
  for(const k of ['leftMm','topMm','rightMm','bottomMm'])if(p[k]<5||p[k]>50)throw Error('As margens das marcas devem ficar entre 5 e 50 mm.');
  if(p.armMm<5||p.armMm>20)throw Error('O comprimento dos L deve ficar entre 5 e 20 mm.');
  if(p.thicknessMm<.3||p.thicknessMm>1)throw Error('A espessura das marcas deve ficar entre 0,3 e 1 mm.');

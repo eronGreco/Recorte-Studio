@@ -44,7 +44,7 @@ test('explicit v2 physical sheet and strict settings only', () => {
   assert.equal(result.physicallyValidated, false);
   assert.equal(result.paths[0].body, 'M600,400\x03D600,1540\x03D2380,1540\x03D2380,400\x03D600,400\x03');
   rejects(j => { j.version = 1; }); rejects(j => { delete j.sheet; });
-  rejects(j => { j.sheet.widthMm = 210; }); rejects(j => { j.sheet.heightMm = 297; });
+  rejects(j => { j.sheet.widthMm = 400; }); rejects(j => { j.sheet.heightMm = 400; });
   rejects(j => { j.sheet.widthMm = NaN; }); rejects(j => { j.sheet.number = 0; });
   rejects(j => { j.sheets = [j.sheet]; }); rejects(j => { j.usbCommands = 'D0,0'; });
   rejects(j => { j.settings.lineOvercut = false; }); rejects(j => { j.settings.overcutMm = 0; });

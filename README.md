@@ -28,11 +28,25 @@ Ele nasceu de problemas recorrentes no meu uso: funções básicas difíceis de 
 **A prioridade é UI/UX.** Opções precisam aparecer no contexto certo; medidas precisam ser fáceis de editar; e o resultado precisa ser visível antes de imprimir ou cortar.
 
 > [!NOTE]
-> **Em desenvolvimento ativo.** O foco atual é Windows + CAMEO 4 por USB, com AutoBlade no suporte 1 e folha A4. Baixe o instalador para Windows nas versões publicadas ou execute pelo código-fonte seguindo as instruções abaixo. A compatibilidade com outros equipamentos precisa de contribuição e validação física.
+> **Em desenvolvimento ativo.** O foco atual é Windows + CAMEO 4 por USB, com AutoBlade no suporte 1. A4 é o formato já usado nos testes físicos; as marcas também aceitam outros formatos até 304,8 × 304,8 mm, ainda sujeitos a validação física. Baixe o instalador para Windows nas versões publicadas ou execute pelo código-fonte seguindo as instruções abaixo. A compatibilidade com outros equipamentos precisa de contribuição e validação física.
 
-## Novidades da versão 0.10.0
+## Novidades da versão 0.12.2
 
-**Instalador para Windows** com todas as dependências incluídas e verificação de novas versões a cada abertura. O programa informa se há atualização, se está atualizado ou se não conseguiu consultar o GitHub. Veja todas as mudanças no [changelog](CHANGELOG.md).
+- **Projetos em abas**, com histórico, recuperação e calibração separados; um único envio à CAMEO, vinculado ao projeto responsável.
+- **Cortar reorganizado**, com busca de material no mesmo campo, calibração visível e prévia dos contornos.
+- **Camadas, botão direito e ajudas** revisados; cursores acompanham peças giradas e a grade tem controles mais claros.
+- **Impressão só da frente quando não há verso**, novos formatos e orientação de folha, nomes de arquivo coerentes e preservação da margem colorida ao recuar o corte.
+- **Envio de contornos longos em blocos menores**, com confirmação entre eles. A correção USB foi verificada em simulação e aguarda confirmação física.
+
+Veja os detalhes e o histórico no [changelog](CHANGELOG.md).
+
+## Projetos e corte
+
+As abas dos projetos ficam na base da área de trabalho. Novo projeto abre outra aba. Cada aba mantém suas peças, ajustes, seleção e histórico; a recuperação automática restaura a sessão ao reiniciar. Use **+** ou **Ctrl+N** para criar, **Ctrl+Tab** para trocar e **Reabrir aba** ou **Ctrl+Shift+T** para recuperar a última aba fechada.
+
+A CAMEO é compartilhada: só um projeto envia comandos de cada vez. Durante um envio, a barra acima das abas identifica o projeto responsável e permite voltar a ele. Os controles de pausar, retomar e parar pertencem a essa aba.
+
+Em **Cortar**, escolha ou busque o material no mesmo campo, edite os valores se necessário e use **Testar e calibrar este papel** para testar uma área livre. Confira os contornos da folha já impressa e inicie o corte. Organização das peças e configuração de folha permanecem no editor.
 
 ## Interface
 
@@ -66,7 +80,7 @@ A sangria pode acompanhar a frente e o verso. Ela é gerada localmente a partir 
 
 ### 🔁 Frente e verso que continuam ligados
 
-Associe uma arte de verso a cada peça. Ao duplicar, mover, girar ou organizar as frentes, os versos acompanham as posições correspondentes do outro lado da folha, **mantendo a escrita legível**.
+O verso é opcional: sem arte de verso na folha, o PDF tem somente uma página. Você também pode escolher imprimir só a frente. Associe uma arte de verso a cada peça. Ao duplicar, mover, girar ou organizar as frentes, os versos acompanham as posições correspondentes do outro lado da folha, **mantendo a escrita legível**.
 
 - Virada lateral ou por cima, com ajuste fino de deslocamento X/Y.
 - PDF com as duas faces e exportação independente de cada face.
@@ -93,7 +107,8 @@ Furos podem ficar vinculados à peça, acompanhando suas transformações e cóp
 - Caixa de seleção que acompanha a rotação da peça.
 - Ângulo e tamanho editáveis junto à transformação: **digite e confirme com Enter ou ✓**.
 - Proporção mantida por padrão, com opção de redimensionar os eixos separadamente.
-- Camadas com organização, visibilidade e bloqueio; agrupamento, duplicação e desfazer/refazer.
+- Camadas com miniaturas, busca, arrastar e soltar, visibilidade, bloqueio e opacidade; agrupamento, duplicação e desfazer/refazer.
+- Menu do botão direito na arte e na lista de peças; cursores de dimensão acompanham a rotação.
 - Troca da arte de uma peça preservando sua montagem; mudança de silhueta pede confirmação.
 
 ### 🎛️ Materiais e calibração no papel que você já tem
@@ -106,9 +121,15 @@ No **Teste de papel**, você delimita uma região livre da folha. O programa pre
 
 As regiões usadas ficam registradas. Uma nova rodada pede outra área; quando uma tentativa falhou antes de cortar corretamente, há uma opção explícita de reutilização.
 
+### 📄 Folha, impressão e nomes de arquivo
+
+Escolha A6, A5, A4, A3, Carta, Ofício US, base de 12 polegadas ou medidas personalizadas, em retrato ou paisagem. A grade ajuda no posicionamento manual e não é impressa. A primeira arte sugere o nome do projeto; renomear ao salvar atualiza as próximas exportações.
+
+O recuo do corte preserva a margem colorida da impressão. Para Print & Cut na CAMEO 4, os lados da folha ficam entre 60 e 304,8 mm, respeitando as margens e reservas do scanner. Formatos maiores podem ser usados para impressão; novos formatos de corte ainda precisam de validação física.
+
 ### ⚙️ Corte direto e trabalho em segundo plano
 
-A comunicação com a CAMEO 4 usa o driver USBPRINT nativo do Windows. O envio conserva uma cópia preparada do trabalho, enquanto o editor continua disponível.
+A comunicação com a CAMEO 4 usa o driver USBPRINT nativo do Windows. O envio conserva uma cópia preparada do trabalho, enquanto o editor continua disponível. Trajetos longos são enviados em blocos de até 1024 bytes, encerrando comandos completos e aguardando READY entre blocos. Não há reenvio automático depois de uma escrita de resultado incerto.
 
 A pausa e a parada pelo programa acontecem **entre passadas completas**. A retomada relê as marcas antes de continuar. Para interromper imediatamente o movimento, use o controle físico da máquina. A pausa/retomada ainda precisa de validação física completa nesta integração.
 
@@ -196,7 +217,7 @@ O projeto `.recorte` guarda a montagem editável. O SVG pode conter apenas as li
 - **Editor:** imagens raster, SVG, formas, texto, camadas, sangria, frente e verso e organização da folha.
 - **Entrada raster:** PNG, JPEG, WebP e TIFF são tratados pelo decodificador; outros formatos dependem do suporte do Sharp. Imagens com várias páginas/quadros usam a primeira imagem.
 - **Saída:** projeto `.recorte`, SVG e PDF de impressão frente e verso.
-- **Corte direto:** CAMEO 4, Windows USBPRINT, A4 retrato/paisagem, AutoBlade no suporte 1. Há corte de produção confirmado em uma CAMEO 4; outras máquinas e configurações precisam de validação própria.
+- **Corte direto:** CAMEO 4, Windows USBPRINT, AutoBlade no suporte 1; A4 e folha configurável dentro dos limites indicados acima. Há corte de produção confirmado em uma CAMEO 4; outras máquinas e configurações precisam de validação própria.
 - **Ainda sem suporte:** arquivos `.studio3`, importação de PDF como documento editável, Bluetooth e envio a outros modelos de plotter.
 - **Outros sistemas operacionais:** não são anunciados como suportados nesta versão. O transporte USB atual é específico do Windows.
 
@@ -204,7 +225,7 @@ As rotinas têm testes de geometria, interface, exportação e comunicação sim
 
 ## Privacidade e arquivos locais
 
-O processamento é local. O aplicativo não exige login, conta na Silhouette ou upload das artes. A recuperação automática, as predefinições pessoais e o histórico de máquina ficam em `%APPDATA%/Recorte Studio` na versão instalada; a pasta inicial para salvar projetos é `Documentos/Recorte Studio`. Uma atualização preserva esses dados. Ao executar pelo código-fonte, são usadas as pastas locais `data/` e `projetos/`, ignoradas pelo Git. A consulta de atualizações envia ao GitHub uma solicitação de versão, sem enviar suas artes ou projetos.
+O processamento é local. O aplicativo não exige login, conta na Silhouette ou upload das artes. A recuperação automática, as predefinições pessoais e o histórico de máquina ficam em `%APPDATA%/Recorte Studio` na versão instalada; a pasta inicial para salvar projetos é `Documentos/Recorte Studio`. A sessão mantém a lista das abas, os arquivos de recuperação e os históricos de máquina por projeto. Uma atualização preserva esses dados. Ao executar pelo código-fonte, são usadas as pastas locais `data/` e `projetos/`, ignoradas pelo Git. A consulta de atualizações envia ao GitHub uma solicitação de versão, sem enviar suas artes ou projetos.
 
 ## Desenvolvimento
 

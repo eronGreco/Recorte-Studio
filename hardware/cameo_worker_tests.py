@@ -3,6 +3,7 @@ from pathlib import Path
 sys.path.insert(0,str(Path(__file__).parent))
 import contextlib
 import io
+import json
 import queue
 import unittest
 from unittest.mock import patch
@@ -278,6 +279,121 @@ class Tests(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(RuntimeError,'marks failed'):
             worker.run('cut', job, session_factory=lambda **kw:s)
         self.assertEqual(s.events,['ready','close'])
+
+class LargePathTests(unittest.TestCase):
+    def setUp(self):
+        fixture = json.loads((Path(__file__).parent.parent / 'test/fixtures/cameo-ywing-long-paths.json').read_text(encoding='utf-8'))
+        self.job = {key: fixture[key] for key in ('settings', 'registration', 'paths')}
+        self.session = Session(None)
+        self.sent, self.confirmed, self.events = [], [], []
+        self.pending = None
+
+    def write(self, kernel, handle, data):
+        self.sent.append(data)
+        if len(data) > 4096:
+            raise TimeoutError('Simulated long USB write deadline')
+        if self.pending is not None:
+            raise RuntimeError('Next batch arrived before READY')
+        self.pending = data
+
+    def ready(self, timeout):
+        self.assertEqual(timeout, 180.0)
+        self.assertIsNotNone(self.pending)
+        self.confirmed.append(self.pending)
+        self.pending = None
+
+    def run_job(self, action='cut', job=None, control=None, on_event=None):
+        self.session.wait_ready = self.ready
+        def event(**data):
+            self.events.append(data)
+            if on_event:
+                on_event(data)
+        with patch.object(worker, 'emit', side_effect=event), patch.object(worker, 'write_exact', side_effect=self.write):
+            return worker.run(action, job or self.job, session_factory=lambda **kwargs:self.session, control=control)
+
+    def test_real_ywing_streams_finish_without_exceeding_or_flooding_buffer(self):
+        self.assertEqual([len(p['body']) for p in self.job['paths']], [4796, 4774])
+        # The old all-at-once calls fail in the same buffer/deadline model.
+        for path in self.job['paths']:
+            with self.assertRaises(TimeoutError):
+                self.write(None, None, path['body'].encode('ascii'))
+        self.sent.clear()
+        result = self.run_job()
+        expected = b''.join(p['body'].encode('ascii') * self.job['settings']['passes'] for p in self.job['paths'])
+        self.assertEqual(b''.join(self.sent), expected)
+        self.assertEqual(self.confirmed, self.sent)
+        self.assertTrue(all(0 < len(b) <= 1024 and b.endswith(b'\x03') for b in self.sent))
+        self.assertTrue(any(b.startswith(b'D') for b in self.sent), 'Continue the original path; do not invent a new pen-up move')
+        self.assertEqual(self.session.events.count('register'), 1)
+        self.assertEqual(self.session.events.count('home'), 1)
+        self.assertEqual((result['state'], result['completed'], result['total']), ('completed', 4, 4))
+        self.assertEqual(sum(e.get('phase') == 'path-block-ready' for e in self.events), len(self.sent))
+
+    def test_complete_command_boundaries_preserve_every_byte(self):
+        for path in self.job['paths']:
+            body = path['body'].encode('ascii')
+            for limit in [16, 17, 31, 63, 1024]:
+                blocks = worker.path_blocks(body, limit)
+                self.assertEqual(b''.join(blocks), body)
+                self.assertTrue(all(len(b) <= limit and b.endswith(b'\x03') for b in blocks))
+                self.assertTrue(all(b[:1] in (b'M', b'D') for b in blocks))
+        for bad in [b'', b'M1,2', b'M1,2\x03\x03']:
+            with self.assertRaises(ValueError):
+                worker.path_blocks(bad)
+        with self.assertRaises(ValueError):
+            worker.path_blocks(b'M' + b'1' * 1024 + b',0\x03')
+
+    def test_partial_write_failure_is_not_retried_or_marked_complete(self):
+        original_write = self.write
+        def fail_second(*args):
+            if len(self.sent) == 1:
+                self.sent.append(args[2])
+                raise TimeoutError('Simulated uncertain partial write')
+            original_write(*args)
+        self.write = fail_second
+        with self.assertRaisesRegex(worker.original.CameoError, 'trecho 2/5'):
+            self.run_job()
+        self.assertEqual(len(self.sent), 2)
+        self.assertEqual(len(self.confirmed), 1)
+        self.assertNotIn('home', self.session.events)
+        failure = next(e for e in self.events if e.get('phase') == 'path-block-failed')
+        self.assertEqual(failure['pathId'], 'ywing-upright')
+        self.assertEqual(failure['confirmedBytes'], len(self.confirmed[0]))
+        self.assertFalse(any(e.get('completed', 0) > 0 for e in self.events))
+
+    def test_ready_failure_stops_before_next_chunk(self):
+        self.ready = lambda timeout: (_ for _ in ()).throw(TimeoutError('Simulated missing READY'))
+        with self.assertRaisesRegex(worker.original.CameoError, 'não foi reenviado'):
+            self.run_job()
+        self.assertEqual(len(self.sent), 1)
+        self.assertEqual(self.confirmed, [])
+        self.assertNotIn('home', self.session.events)
+
+    def test_pause_between_passes_rescans_without_repeating_finished_chunks(self):
+        control = worker.JobControl()
+        previous_ready = self.ready
+        def ready(timeout):
+            previous_ready(timeout)
+            if len(self.confirmed) == 1:
+                control.commands.put('pause')
+        self.ready = ready
+        def event(value):
+            if value.get('state') == 'paused':
+                self.assertEqual(value['completed'], 1)
+                control.commands.put('resume')
+        result = self.run_job(control=control, on_event=event)
+        self.assertEqual(b''.join(self.sent), b''.join(p['body'].encode('ascii') * 2 for p in self.job['paths']))
+        self.assertEqual(self.session.events.count('register'), 2)
+        self.assertEqual(result['completed'], 4)
+
+    def test_calibration_uses_the_same_flow_control(self):
+        trials = [{'label': label, 'settings':self.job['settings'], 'paths':[{'id':'calibration-'+label, 'body':self.job['paths'][0]['body']}]} for label in 'ABCDEF']
+        result = self.run_job('calibrate', {'registration':self.job['registration'], 'trials':trials})
+        self.assertEqual(b''.join(self.sent), self.job['paths'][0]['body'].encode('ascii') * 12)
+        self.assertEqual(self.confirmed, self.sent)
+        self.assertEqual(self.session.events.count('register'), 1)
+        self.assertEqual(result['completed'], 12)
+
 
 if __name__ == '__main__':
     unittest.main()

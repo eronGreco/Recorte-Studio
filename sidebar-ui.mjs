@@ -1,4 +1,5 @@
 import {installAnchoredHelp} from './anchored-help.mjs';
+import {HELP} from './help-content.mjs';
 
 // Existing controls are moved, keeping their state, IDs and event handlers.
 export function installSidebarUI({icon,active,isVectorCut,getTool}){
@@ -64,16 +65,32 @@ export function installSidebarUI({icon,active,isVectorCut,getTool}){
  inspector.querySelectorAll('.panel-title').forEach(e=>e.remove());
  const helps=[];
  function helpAt(anchor,text,label='Saiba mais'){
+  if(!anchor)return null;
+  if(anchor.matches('label')){const row=document.createElement('div');row.className='sidebar-help-row';anchor.before(row);row.append(anchor);anchor=row;}
+  const previous=anchor.querySelector(':scope > .sidebar-help');if(previous)return previous;
   const button=document.createElement('button');button.type='button';button.className='cut-help sidebar-help';button.textContent='?';button.dataset.help='sidebar-help-'+helps.length;button.setAttribute('aria-label',label);button.setAttribute('aria-describedby',button.dataset.help);const source=document.createElement('span');source.id=button.dataset.help;source.hidden=true;source.textContent=text;anchor.append(button,source);helps.push(button);return button;
  }
- for(const el of [...inspector.querySelectorAll('p.field-note:not([id]),#node-fields > .field-note')]){
-  const parent=el.parentElement;const anchor=parent.querySelector(':scope > summary,:scope > .section-heading,:scope > label,:scope > .reg-subheading')||parent;
-  // Help buttons stay outside wrapping input labels.
-  let host=anchor;if(anchor.matches('label')){host=document.createElement('div');host.className='sidebar-help-row';anchor.before(host);host.append(anchor);}
-  helpAt(host,el.textContent,'Explicar '+(parent.querySelector('summary,.section-heading')?.textContent||'este ajuste').trim());el.remove();
- }
- helpAt(panes.bleed.querySelector('.sidebar-pane-heading'),'Cria uma continuação das cores além da borda para evitar filetes brancos. Não altera a linha de corte. A margem e o desfoque valem para a frente e o verso.','Como funciona a sangria');
- helpAt(panes.art.querySelector('.sidebar-pane-heading'),'Troque a arte da frente ou vincule uma arte ao verso. O tamanho e a posição da peça são preservados. Use a opção de cópias para aplicar às peças vinculadas.','Como funciona a arte vinculada');
+ // One deliberate topic per anchor. The old note collector put three unrelated
+ // registration explanations beside the first subheading.
+ for(const el of inspector.querySelectorAll('p.field-note:not([id]):not(.layer-hint),#node-fields > .field-note'))el.remove();
+ helpAt(panes.piece.querySelector('.sidebar-pane-heading'),HELP.piece,'Como ajustar tamanho e posição');
+ const cutHelp=helpAt(panes.cut.querySelector('.sidebar-pane-heading'),HELP.cut,'Como ajustar a linha de corte');
+ helpAt($('cut-join').closest('label'),HELP.corners,'Como escolher o formato dos cantos');
+ helpAt(document.querySelector('label[for="cut-smoothing"]'),HELP.smoothing,'Como tirar o serrilhado do corte');
+ helpAt($('remove-white').closest('label'),HELP.background,'Como remover o fundo da imagem');
+ helpAt($('include-holes').closest('label'),HELP.holes,'Quando cortar os vazios internos');
+ helpAt($('cut-line-appearance').querySelector('summary'),HELP.appearance,'Como mudar a aparência da linha');
+ helpAt(panes.bleed.querySelector('.sidebar-pane-heading'),HELP.bleed,'Como funciona a sangria');
+ helpAt(panes.art.querySelector('.sidebar-pane-heading'),HELP.art,'Como funciona a arte vinculada');
+ helpAt(layers.querySelector('.section-heading'),HELP.layers,'Como organizar camadas e peças');
+ helpAt(panes.page.querySelector('.sidebar-pane-heading'),HELP.page,'Como escolher o papel');
+ helpAt($('page-grid-heading'),HELP.grid,'Como usar a grade e o espaçamento');
+ helpAt($('registration-panel').querySelector('.section-heading'),HELP.registration,'Para que servem as marcas do scanner');
+ const registrationTopics=[['registrationPosition','Como posicionar as marcas'],['registrationSize','Como ajustar o tamanho das marcas'],['scanner','Como reservar espaço para o scanner']];
+ $('reg-fields').querySelectorAll(':scope > .reg-subheading').forEach((heading,n)=>{heading.id=['reg-position-heading','reg-mark-size-heading','reg-protection-heading'][n];helpAt(heading,HELP[registrationTopics[n][0]],registrationTopics[n][1]);});
+ helpAt($('arrange-panel').querySelector('summary'),HELP.arrange,'Como alinhar e distribuir peças');
+ helpAt($('combine-panel').querySelector('.section-heading'),HELP.combine,'Como combinar formas');
+ helpAt($('node-fields').querySelector('.section-heading'),HELP.nodes,'Como editar os pontos de um desenho');
  // Keep task headings concise; the selected navigation already names the task.
  for(const id of ['object-properties','cut-panel','vector-cut-panel','production-panel','page-panel'])$(id).querySelector(':scope > .section-heading')?.classList.add('sidebar-secondary-heading');
  const appearance=$('cut-line-appearance');appearance.parentElement.append(appearance);
@@ -88,6 +105,7 @@ export function installSidebarUI({icon,active,isVectorCut,getTool}){
  }
  function sync(){
   const items=active(),single=items.length===1?items[0]:null,png=single?.data.kind==='png',vector=isVectorCut(single),signature=items.map(i=>i.data.uid).join('|');
+  $(cutHelp.getAttribute('aria-describedby')).textContent=vector?HELP.vector:HELP.cut;
   if(signature!==lastSelection){if(signature&&current!=='layers'&&(current==='page'||vector&&['piece','bleed','art'].includes(current)))current=vector?'cut':'piece';if(items.length>1&&['cut','bleed','art'].includes(current))current='piece';lastSelection=signature;}
   const tool=getTool();if(tool!==lastTool&&['nodes','text'].includes(tool))current='piece';lastTool=tool;
   const available={piece:items.length>0,cut:!!(png||vector),bleed:!!png,art:!!png,layers:true,page:true};
@@ -96,7 +114,7 @@ export function installSidebarUI({icon,active,isVectorCut,getTool}){
   $('sidebar-multi-actions').textContent=`Mova, gire, redimensione e alinhe as ${items.length} peças juntas.`;
   for(const [id] of categories){
    const button=$('sidebar-'+id),on=current===id;button.disabled=!available[id];button.setAttribute('aria-disabled',String(button.disabled));button.setAttribute('aria-selected',String(on));button.tabIndex=on?0:-1;panes[id].hidden=!on;
-   button.title=available[id]?'':items.length>1?'Selecione uma única peça para este ajuste.':id==='piece'?'Selecione uma peça.':id==='cut'?'Selecione uma imagem com contorno ou um corte vetorial.':'Selecione uma única imagem.';
+   button.title=available[id]?'':items.length>1?'Este ajuste só pode ser feito em uma peça por vez. Clique em apenas uma imagem para editar seu corte, sua sangria ou sua arte; use Peça para mover o conjunto.':id==='piece'?'Selecione uma peça.':id==='cut'?'Selecione uma imagem com contorno ou um corte vetorial.':'Selecione uma única imagem.';
    if(button.disabled&&items.length>1)button.setAttribute('aria-describedby','sidebar-single-only');else button.removeAttribute('aria-describedby');
   }
   copies.hidden=!png||!['bleed','art'].includes(current);

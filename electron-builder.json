@@ -1,12 +1,61 @@
 {
- "appId":"com.erongreco.recortestudio",
- "productName":"Recorte Studio",
- "directories":{"output":"dist"},
- "asar":false,
- "npmRebuild":false,
- "files":["*.cjs","*.mjs","*.js","*.css","studio.html","assets/**","hardware/**","LICENSE","THIRD_PARTY_NOTICES.md","!**/*-tests.mjs","!**/*_tests.py"],
- "extraResources":[{"from":"runtime/python","to":"runtime/python","filter":["**/*"]}],
- "win":{"target":[{"target":"nsis","arch":["x64"]}],"icon":"assets/icon.ico","artifactName":"Recorte-Studio-Setup-${version}-${arch}.${ext}"},
- "nsis":{"oneClick":false,"perMachine":false,"allowToChangeInstallationDirectory":true,"createDesktopShortcut":true,"createStartMenuShortcut":true,"shortcutName":"Recorte Studio","runAfterFinish":false,"deleteAppDataOnUninstall":false,"installerLanguages":["pt_BR","en_US"]},
- "publish":null
+  "appId": "com.erongreco.recortestudio",
+  "productName": "Recorte Studio",
+  "directories": {
+    "output": "dist"
+  },
+  "asar": false,
+  "npmRebuild": false,
+  "files": [
+    "*.cjs",
+    "*.mjs",
+    "*.js",
+    "*.css",
+    "studio.html",
+    "workspace.html",
+    "assets/**",
+    "hardware/**",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "!**/*-tests.mjs",
+    "!**/*_tests.py"
+  ],
+  "extraResources": [
+    {
+      "from": "runtime/python",
+      "to": "runtime/python",
+      "filter": [
+        "**/*"
+      ]
+    }
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "icon": "assets/icon.ico",
+    "artifactName": "Recorte-Studio-Setup-${version}-${arch}.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Recorte Studio",
+    "runAfterFinish": false,
+    "deleteAppDataOnUninstall": false,
+    "installerLanguages": [
+      "pt_BR",
+      "en_US"
+    ],
+    "installerIcon": "assets/icon.ico",
+    "uninstallerIcon": "assets/icon.ico"
+  },
+  "publish": null
 }

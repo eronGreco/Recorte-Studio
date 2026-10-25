@@ -7,7 +7,9 @@ await fs.mkdir(profile,{recursive:true});await fs.copyFile(`${recortePaths.fixtu
 const app=await electron.launch({args:[`${recortePaths.repoRoot}`],env:{...process.env,RECORTE_TEST_DATA:profile}});
 try{
  const p=await app.firstWindow();p.setDefaultTimeout(15000);p.on('pageerror',e=>errors.push(e.message));await p.waitForSelector('#canvas[data-tool]');await p.waitForFunction(()=>{const roots=paper.project.layers.find(l=>l.name==='art')?.children.filter(i=>i.data.kind==='png');return roots?.length&&roots.every(r=>r.data.latestJob&&!r.data.pending);});
- const state=()=>p.evaluate(()=>({center:[paper.view.center.x,paper.view.center.y],zoom:paper.view.zoom,items:paper.project.layers.find(l=>l.name==='art').exportJSON({asString:false})[1].children}));
+ // Derived bleed caches can regenerate after opening an older project.
+ // Pan gestures must preserve source artwork, cuts, transforms and settings.
+ const state=()=>p.evaluate(()=>({center:[paper.view.center.x,paper.view.center.y],zoom:paper.view.zoom,items:paper.project.layers.find(l=>l.name==='art').children.map(root=>{const value=root.exportJSON({asString:false,precision:12});const walk=node=>{if(!Array.isArray(node)||!node[1])return;const props=node[1];if(props.children)props.children=props.children.filter(c=>c[1]?.data?.kind!=='bleed');if(props.data?.piece){delete props.data.piece.backBleed;delete props.data.piece.bleedStatus;}props.children?.forEach(walk);};walk(value);return value;})}));
  const before=await state();
  for(const side of ['front','back']){
   await p.locator('#side-'+side).click();if(side==='back')await p.waitForFunction(()=>paper.project.layers.find(l=>l.name==='back-preview').visible&&paper.project.layers.find(l=>l.name==='back-preview').children.some(i=>!i.data.placeholder));

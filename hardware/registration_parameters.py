@@ -10,8 +10,8 @@ def normalize(value=None):
     p = {**DEFAULTS, **(value or {})}
     if any(type(v) not in (int, float) or not math.isfinite(v) for v in p.values()):
         raise ValueError("Medidas das marcas inválidas.")
-    if (p['widthMm'], p['heightMm']) not in ((297, 210), (210, 297)):
-        raise ValueError("Use A4 em retrato ou paisagem.")
+    if not 60 <= p['widthMm'] <= 304.8 or not 60 <= p['heightMm'] <= 304.8:
+        raise ValueError("A leitura de marcas da CAMEO 4 aceita folhas entre 60 e 304,8 mm em cada lado.")
     if any(not 5 <= p[k] <= 50 for k in ('leftMm', 'topMm', 'rightMm', 'bottomMm')):
         raise ValueError("As margens devem ficar entre 5 e 50 mm.")
     if not 5 <= p['armMm'] <= 20 or not .3 <= p['thicknessMm'] <= 1:

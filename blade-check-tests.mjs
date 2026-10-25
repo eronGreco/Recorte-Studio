@@ -15,8 +15,8 @@ try{
  assert.equal(await fs.readdir(profile+'/ui/machine-logs').catch(()=>[]).then(a=>a.length),0);
  await p.locator('#blade-check-done').click();
  await p.locator('#cut-settings-open').click();
- assert.equal(await p.locator('#blade-check-open').isVisible(),true);
- assert.ok(await p.locator('#blade-check-open').evaluate(e=>e.getBoundingClientRect().bottom<document.getElementById('cut-settings-slot').getBoundingClientRect().top));
+ assert.equal(await p.locator('#blade-check-open').isVisible(),false);await p.locator('#cut-settings-diagnostics > summary').click();assert.equal(await p.locator('#blade-check-open').isVisible(),true);
+ assert.match(await p.locator('#cut-settings-diagnostics').textContent(),/sem cortar o papel/);
  for(const [key,value]of Object.entries(doc.production.machine.settings)){await p.locator('#machine-'+key).fill(String(value));await p.locator('#machine-'+key).press('Tab');}
  await p.locator('#blade-check-open').click();
  await p.waitForSelector('#blade-check-dialog[open]');
@@ -25,7 +25,7 @@ try{
  assert.match(await p.locator('#blade-check-expected').textContent(),/4/);
  await p.locator('#blade-check-done').click();
  // The same action must be reachable directly from the normal cut window.
- await p.locator('#machine-open').click();
+ await p.locator('#machine-open').click();await p.locator('.machine-diagnostics > summary').click();
  assert.equal(await p.locator('#blade-check-machine').isVisible(),true);
  await p.locator('#blade-check-machine').click();
  await p.waitForSelector('#blade-check-dialog[open]');

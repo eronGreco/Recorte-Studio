@@ -4,7 +4,7 @@ export function installAnchoredHelp({root,help,selector='.cut-help',text=button=
  function clear(){active?.setAttribute('aria-expanded','false');active=null;if(help.matches(':popover-open'))help.hidePopover();delete help.dataset.active;}
  function show(button){
   if(active===button){clear();return;}clear();active=button;button.setAttribute('aria-expanded','true');
-  help.textContent=text(button);help.dataset.active=button.getAttribute('aria-describedby')||button.dataset.help;help.showPopover();
+  const paragraphs=String(text(button)||'').split('\n\n');help.replaceChildren(...paragraphs.map((value,index)=>{const el=document.createElement(paragraphs.length>1&&index===0?'strong':'p');el.textContent=value;return el;}));help.dataset.active=button.getAttribute('aria-describedby')||button.dataset.help;help.showPopover();
   const b=button.getBoundingClientRect(),tip=help.getBoundingClientRect(),gap=9,pad=10;
   const left=Math.max(pad,Math.min(window.innerWidth-tip.width-pad,b.left+b.width/2-tip.width/2)),above=b.top>=tip.height+gap+pad;
   help.style.left=left+'px';help.style.top=(above?b.top-tip.height-gap:Math.min(window.innerHeight-tip.height-pad,b.bottom+gap))+'px';

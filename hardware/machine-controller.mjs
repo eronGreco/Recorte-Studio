@@ -1,3 +1,4 @@
+import {machineCutPreview} from '../cut-preview.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
@@ -24,14 +25,14 @@ export function prepareMachineJob(project,pages){
  for(const [index,item]of project.items.entries()){const props=item[1],id=typeof props.data?.uid==='string'?props.data.uid:'piece-'+index,layer=project.production?.layers?.find(l=>l.id===props.data?.layerId);if(props.visible===false||props.opacity===0||layer?.visible===false||layer?.opacity===0)continue;
   if(props.data?.kind==='cut-vector')continue;
   const polygons=extracted.paths.filter(p=>id&&p.id.startsWith(id+'-path-')&&p.closed).map(p=>p.pointsMm);
-  const bleed=props.data?.piece?.bleed,footprint=offsetPolygons(polygons,bleed?.enabled?bleed.width:0,props.data?.cut?.join||'sharp');
+  const bleed=props.data?.piece?.bleed,footprint=offsetPolygons(polygons,(bleed?.enabled?bleed.width:0)+Math.max(0,-(props.data?.cut?.offset||0)),props.data?.cut?.join||'sharp');
   if(reserved.some(shape=>intersectionArea(footprint,[shape])>.0001))throw Error('Uma arte ou sua sangria invade a área reservada do scanner. Mova a peça, use Encaixar na folha ou ajuste a proteção em Marcas de registro.');
  }
  if(!Array.isArray(pages)||pages.length<1||pages.length>2||pages.some(s=>typeof s!=='string'||s.length>100_000_000||!/<svg\b/.test(s)||!s.includes('width="'+extracted.page.widthMm+'mm"')||!s.includes('height="'+extracted.page.heightMm+'mm"')))throw Error('Impressão preparada inválida.');
  return {compiled,excluded:extracted.excluded,pages:pages.map((s,i)=>i===0?addMarksToSVG(s,policy.whiteBorderMm,compiled.registration.geometry.parameters,config):s)};
 }
 
-export function createMachineController({dataDir,onState=()=>{},exportPDF,printSheet,transport=runUSB,testMode=false}){
+export function createMachineController({dataDir,calibrationDataDir=dataDir,onState=()=>{},exportPDF,printSheet,transport=runUSB,testMode=false}){
  let state={state:'disconnected',message:'Conecte a CAMEO 4 por USB e confira a conexão.',busy:false,testMode},prepared=null,activeTransport=null;
  const emit=patch=>{state={...state,...patch,testMode};onState({...state});};
  const requireIdle=()=>{if(state.busy)throw Error('Aguarde a operação atual da CAMEO terminar.');};
@@ -52,7 +53,7 @@ export function createMachineController({dataDir,onState=()=>{},exportPDF,printS
  }
  return {
   ...createUserMaterials({dataDir}),
-  ...createCalibrationService({dataDir,requireIdle,operation}),
+  ...createCalibrationService({dataDir:calibrationDataDir,requireIdle,operation}),
   get busy(){return state.busy;},getState:()=>({...state}),
   status:()=>operation('status'),
   async control(command){
@@ -78,7 +79,7 @@ export function createMachineController({dataDir,onState=()=>{},exportPDF,printS
    await fs.mkdir(directory,{recursive:true});const fingerprint=createHash('sha256').update(project).digest('hex');
    await fs.writeFile(path.join(directory,'project.recorte'),project);await fs.writeFile(path.join(directory,'job.json'),JSON.stringify({fingerprint,compiled:plan.compiled,excluded:plan.excluded},null,2));
    for(let i=0;i<plan.pages.length;i++)await fs.writeFile(path.join(directory,i===0?'frente.svg':'verso.svg'),plan.pages[i]);
-   prepared={...plan,token,used:false,name:snapshot.name||'Recorte Studio',fingerprint,printed:false};return {token,fingerprint,summary:plan.compiled.summary,excluded:plan.excluded,pages:plan.pages.length,preview:plan.pages[0]};
+   prepared={...plan,token,used:false,name:snapshot.name||'Recorte Studio',fingerprint,printed:false};return {token,fingerprint,summary:plan.compiled.summary,excluded:plan.excluded,pages:plan.pages.length,preview:machineCutPreview(plan.pages[0],plan.compiled.paths,snapshot.production?.cutAppearance)};
   },
   async export(token){requireIdle();const p=bundle(token);const result=await exportPDF({pages:p.pages,width:p.compiled.sheet.widthMm,height:p.compiled.sheet.heightMm,name:p.name+' - CAMEO 4'});if(result)p.printed=true;return result;},
   async print(token){requireIdle();const p=bundle(token);const result=await printSheet({pages:p.pages,width:p.compiled.sheet.widthMm,height:p.compiled.sheet.heightMm,name:p.name+' - CAMEO 4'});if(result)p.printed=true;return result;},

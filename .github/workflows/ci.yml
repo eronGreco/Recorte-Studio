@@ -24,6 +24,8 @@ jobs:
       - run: npm test
       - run: npm run test:ui
       - run: npm run dist:win
+      - name: Conferir ícones do programa e do instalador
+        run: ./scripts/check-windows-icons.ps1
       - run: npm run test:packaged
       - run: node scripts/release-files.mjs
       - uses: actions/upload-artifact@v7

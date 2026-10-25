@@ -28,6 +28,8 @@ without subscriptions, accounts, paid tiers, or uploading artwork.
 - Six small A–F material calibration cuts in a user-selected unused area of the sheet.
 - Configurable registration marks, print guides, SVG export and duplex PDF output.
 - Native Windows USBPRINT communication with CAMEO 4.
+- Independent project tabs with session recovery and one shared machine job owned by its project.
+- Front-only PDF when no back artwork exists; configurable page sizes and orientation.
 
 The official Silhouette software places some features in paid editions:
 [SVG import and layers](https://silhouetteamerica.freshdesk.com/support/solutions/articles/35000273383-designer-edition-features)
@@ -35,9 +37,9 @@ require Designer Edition or above, and
 [SVG export](https://silhouetteamerica.freshdesk.com/support/solutions/articles/35000273385-business-edition-features)
 requires Business Edition. Those features are included here under MIT.
 
-## Version 0.10.0
+## Version 0.12.2
 
-Windows installer with bundled dependencies and a GitHub update check on every launch. The app distinguishes available updates, current versions and connectivity failures. See the [changelog](../CHANGELOG.md).
+Independent project tabs, a redesigned cut dialog, searchable layers with drag-and-drop, context menus, optional back pages, configurable paper sizes and clearer help. Long USB paths are sent in command-aligned blocks with READY flow control; physical confirmation of that change is still pending. See the [changelog](../CHANGELOG.md).
 
 ## Install on Windows
 
@@ -46,7 +48,7 @@ Download **Recorte-Studio-Setup-VERSION-x64.exe** from the [latest release](http
 ## Run from source
 
 Current target: Windows 10/11, Node.js 24, Python 3.12+, CAMEO 4 over USB,
-AutoBlade in holder 1, A4 paper.
+AutoBlade in holder 1. A4 has physical production experience; additional paper sizes within the 60–304.8 mm-per-side registration range still need physical validation.
 
 ```powershell
 git clone https://github.com/eronGreco/Recorte-Studio.git

@@ -1,6 +1,6 @@
 {
   "name": "recorte-studio",
-  "version": "0.10.0",
+  "version": "0.12.2",
   "private": true,
   "description": "Editor local de arte, corte, sangria e impressÃ£o frente e verso",
   "main": "main.cjs",
@@ -36,7 +36,10 @@
     "fixtures": "node scripts/create-fixtures.mjs",
     "prepare:runtime": "node scripts/prepare-runtime.mjs",
     "dist:win": "npm run prepare:runtime && electron-builder --win nsis --x64 --publish never",
-    "test:packaged": "node scripts/packaged-smoke.mjs"
+    "test:packaged": "node scripts/packaged-smoke.mjs",
+    "test:workspace": "node workspace-tests.mjs",
+    "test:cut-dialog": "node cut-dialog-tests.mjs",
+    "test:workspace-appearance": "node workspace-appearance-tests.mjs"
   },
   "devDependencies": {
     "electron": "^44.9.0",

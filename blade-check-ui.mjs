@@ -1,12 +1,12 @@
 export function installBladeCheckUI({api,busy,config,serialized,getState}){
  const $=id=>document.getElementById(id);
- $('cut-settings-slot').insertAdjacentHTML('beforebegin','<button type="button" id="blade-check-open" class="blade-check-entry">Verificar lâmina (sem corte) →</button>');
- $('machine-connect').insertAdjacentHTML('afterend','<button type="button" id="blade-check-machine" class="blade-check-entry">Verificar lâmina (sem corte) →</button>');
+ $('cut-settings-slot').insertAdjacentHTML('afterend','<details id="cut-settings-diagnostics"><summary>Diagnóstico da AutoBlade</summary><p class="field-note">Use se o indicador vermelho não acompanhar a profundidade pedida. Esta verificação ajusta a lâmina, sem cortar o papel.</p><button type="button" id="blade-check-open" class="blade-check-entry">Conferir ajuste da AutoBlade</button></details>');
+ $('machine-connect').insertAdjacentHTML('afterend','<button type="button" id="blade-check-machine" class="blade-check-entry">Conferir ajuste da AutoBlade</button>');
  $('machine-dialog').querySelector('.machine-connection').insertAdjacentHTML('afterend','<p id="machine-blade-warning" role="alert" hidden></p>');
  document.body.insertAdjacentHTML('beforeend',`<dialog id="blade-check-dialog">
  <button id="blade-check-close" class="dialog-close" aria-label="Fechar verificação da lâmina">×</button>
  <span class="eyebrow">VERIFICAR A LÂMINA</span><h2>Confira o indicador vermelho.</h2>
- <p>Observe o indicador vermelho e registre onde ele parou.</p>
+ <p>Esta verificação pede profundidade zero e depois o valor configurado. Observe se o indicador vermelho acompanha o ajuste e registre o número em que parou.</p>
  <p class="field-note">Sem corte. A CAMEO não mede a posição física do indicador.</p>
  <p id="blade-check-expected"></p><p id="blade-check-test-mode" hidden>ENSAIO SEM MÁQUINA · nenhum comando USB</p>
  <p id="blade-check-status" role="status"></p>
@@ -29,7 +29,7 @@ export function installBladeCheckUI({api,busy,config,serialized,getState}){
   $('blade-check-test-mode').hidden=!getState().testMode;
   const v=getState().bladeVerification;if(v)verification=v;
   const warning=$('machine-blade-warning');warning.hidden=!verification?.blocked;
-  if(verification?.fault)warning.textContent=`A lâmina não acompanhou o pedido: ${verification.fault.expectedDepth} solicitado, ${verification.fault.observedDepth} observado. Use “Verificar lâmina (sem corte)” antes de cortar as peças.`;
+  if(verification?.fault)warning.textContent=`A lâmina não acompanhou o pedido: ${verification.fault.expectedDepth} solicitado, ${verification.fault.observedDepth} observado. Use “Conferir ajuste da AutoBlade” antes de cortar as peças.`;
  }
  function setExpected(depth){expected=depth;$('blade-check-expected').textContent='Profundidade pedida: '+depth+'.';$('blade-check-run').textContent='Pedir zero e depois '+config().settings.depth;}
  const open=()=>{

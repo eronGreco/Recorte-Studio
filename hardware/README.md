@@ -7,7 +7,7 @@ de 20 unidades por milímetro e ordem vertical/horizontal nos comandos M/D.
 ## Requisitos
 
 - Windows com o driver USB Printing Support.
-- CAMEO 4 conectada por USB, AutoBlade no suporte 1, folha A4.
+- CAMEO 4 conectada por USB e AutoBlade no suporte 1. A4 tem uso físico confirmado; folhas com lados de 60 a 304,8 mm são aceitas pela geometria configurável, com novas dimensões ainda pendentes de validação física.
 - Na versão instalada, o Python já vem incluído. Ao executar o código-fonte sem preparar o runtime, use Python 3.12+ no PATH ou em `RECORTE_PYTHON`.
 - Nenhum outro aplicativo usando a mesma interface USB.
 
@@ -36,6 +36,8 @@ Não é necessário instalar PyUSB ou substituir o driver por Zadig.
 O envio usa a geometria preparada, não acompanha alterações feitas no editor
 depois de iniciar. Uma falha não repete automaticamente o corte. READY confirma
 disponibilidade, não mede a profundidade física da lâmina nem a qualidade do corte.
+
+Contornos são enviados em blocos de até 1024 bytes, encerrando comandos completos e aguardando READY antes do próximo bloco. Uma falha registra o contorno, a passada e os bytes confirmados, sem reenviar uma escrita incerta. Essa correção de contornos longos foi testada por simulação e aguarda confirmação física.
 
 Pausa e parada esperam uma passada inteira terminar. Retomar relê as marcas e
 restaura os ajustes antes da próxima passada. Para interrupção imediata, use a
