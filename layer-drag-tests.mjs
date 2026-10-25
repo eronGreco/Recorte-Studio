@@ -11,7 +11,16 @@ try{const p=await app.firstWindow();p.setDefaultTimeout(10000);p.on('pageerror',
  const order=()=>p.locator('#layers>.layer-group').evaluateAll(nodes=>nodes.map(n=>n.dataset.layerId));
  const group=id=>p.locator(`.layer-group[data-layer-id="${id}"]`);
  const initialGeometry=await p.evaluate(()=>paper.project.layers.find(l=>l.name==='art').children.map(i=>({id:i.data.uid,json:i.exportJSON({asString:false,precision:12})})).sort((a,b)=>a.id.localeCompare(b.id)));
- async function drag(source,target,position){await source.scrollIntoViewIfNeeded();await target.scrollIntoViewIfNeeded();const a=await source.boundingBox(),b=await target.boundingBox();assert.ok(a&&b);await p.mouse.move(a.x+a.width/2,a.y+a.height/2);await p.mouse.down();await p.mouse.move(a.x+a.width/2+8,a.y+a.height/2,{steps:4});await p.mouse.move(b.x+b.width/2,b.y+position,{steps:16});await p.mouse.up();}
+ async function drag(source,target,position){
+  await source.scrollIntoViewIfNeeded();await target.scrollIntoViewIfNeeded();const a=await source.boundingBox(),b=await target.boundingBox();assert.ok(a&&b);
+  await p.mouse.move(a.x+a.width/2,a.y+a.height/2);await p.mouse.down();await p.mouse.move(a.x+a.width/2+8,a.y+a.height/2,{steps:4});
+  await p.mouse.move(b.x+b.width/2,b.y+position,{steps:16});
+  // Native dragover needs a second move over the destination, including on CI.
+  // https://playwright.dev/docs/input#dragging-manually
+  await p.mouse.move(b.x+b.width/2,b.y+position);
+  await p.locator('#layers>.layer-group.drop-before,#layers>.layer-group.drop-after').waitFor({state:'attached'});
+  await p.mouse.up();
+ }
  assert.deepEqual(await order(),['4','3','base']);
  await drag(group('3').locator('.layer-title'),group('4'),-4);assert.deepEqual(await order(),['3','4','base'],'Camada 3 pelo nome para acima da 4, soltando no espaço entre cartões');
  await p.locator('#undo').click();assert.deepEqual(await order(),['4','3','base']);
